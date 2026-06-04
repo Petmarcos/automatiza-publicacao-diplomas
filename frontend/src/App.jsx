@@ -18,7 +18,7 @@ export default function App() {
     formData.append("file_emitidos", fileEmitidos);
 
     try {
-      const response = await fetch("http://localhost:8000/api/processar-diplomas", {
+      const response = await fetch(`${API_URL}/api/processar-diplomas`, {
         method: "POST",
         body: formData,
       });
@@ -48,7 +48,7 @@ export default function App() {
 
   // 🔥 Chamada para baixar o arquivo Excel do Back-end
   const baixarExcel = () => {
-    window.location.href = "http://localhost:8000/api/download-excel";
+    window.location.href = `${API_URL}/api/download-excel`;
   };
 
   return (
