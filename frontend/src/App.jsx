@@ -42,6 +42,9 @@ export default function App() {
   };
 
   const baixarRTF = () => {
+    // 🔥 Adicione esta linha de segurança
+    if (!dadosProcessados) return; 
+    
     const blob = new Blob([dadosProcessados.previa_texto_rtf], { type: "text/rtf" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -54,7 +57,7 @@ export default function App() {
     // Agora o API_URL é encontrado corretamente
     window.location.href = `${API_URL}/api/download-excel`;
   };
-
+  if (!dadosProcessados) return;
   return (
     <div className="min-h-screen bg-gray-50 p-8 font-sans text-gray-800">
       {/* O restante do seu HTML permanece exatamente igual... */}
