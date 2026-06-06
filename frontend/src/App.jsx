@@ -115,7 +115,7 @@ export default function App() {
               <div className="mb-6 p-4 bg-gray-50 border rounded-md max-h-60 overflow-y-auto whitespace-pre-wrap text-sm text-gray-700">
                 <h4 className="font-bold mb-2 underline">Prévia do Conteúdo (RTF):</h4>
                 {limparRTF(dadosProcessados.previa_texto_rtf)}
-                {dadosProcessados.previa_texto_rtf}
+
               </div>
             )}
 
