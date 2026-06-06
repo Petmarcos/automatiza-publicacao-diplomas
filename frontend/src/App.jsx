@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-// 🔥 DEFINA A URL BASE AQUI:
+// URL da API com fallback para o Render caso a variável de ambiente falhe
 const API_URL = import.meta.env.VITE_API_URL || "https://automatiza-publicacao-api.onrender.com";
 
 export default function App() {
@@ -21,7 +21,6 @@ export default function App() {
     formData.append("file_emitidos", fileEmitidos);
 
     try {
-      // Agora o API_URL é encontrado corretamente
       const response = await fetch(`${API_URL}/api/processar-diplomas`, {
         method: "POST",
         body: formData,
@@ -42,8 +41,7 @@ export default function App() {
   };
 
   const baixarRTF = () => {
-    // 🔥 Adicione esta linha de segurança
-    if (!dadosProcessados) return; 
+    if (!dadosProcessados || !dadosProcessados.previa_texto_rtf) return;
     
     const blob = new Blob([dadosProcessados.previa_texto_rtf], { type: "text/rtf" });
     const url = URL.createObjectURL(blob);
@@ -54,27 +52,23 @@ export default function App() {
   };
 
   const baixarExcel = () => {
-    // Agora o API_URL é encontrado corretamente
     window.location.href = `${API_URL}/api/download-excel`;
   };
-  if (!dadosProcessados) return;
+
   return (
     <div className="min-h-screen bg-gray-50 p-8 font-sans text-gray-800">
-      {/* O restante do seu HTML permanece exatamente igual... */}
       <header className="mb-8 border-b-4 border-green-600 bg-white p-6 shadow-sm text-center">
         <h1 className="text-2xl font-bold text-gray-900 tracking-wide uppercase">Instituto Capivara Learning</h1>
         <p className="text-sm text-gray-500 font-medium">Diretoria de Cadastro Acadêmico, Certificação e Diplomação</p>
       </header>
 
-      {!dadosProcessados && (
+      {!dadosProcessados ? (
+        // TELA DE UPLOAD
         <main className="max-w-2xl mx-auto bg-white p-8 rounded-xl shadow-md border border-gray-100">
           <h2 className="text-lg font-semibold mb-6 text-gray-700">Upload das Planilhas de Origem</h2>
-          
           <div className="space-y-6">
             <div>
-              <label className="block text-sm font-semibold text-gray-600 mb-2">
-                1. Diplomas Digitais do Mês Anterior (digitais.xls)
-              </label>
+              <label className="block text-sm font-semibold text-gray-600 mb-2">1. Diplomas Digitais (digitais.xls)</label>
               <input 
                 type="file" 
                 accept=".xls,.xlsx" 
@@ -82,11 +76,8 @@ export default function App() {
                 className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 cursor-pointer border rounded-md p-2" 
               />
             </div>
-
             <div>
-              <label className="block text-sm font-semibold text-gray-600 mb-2">
-                2. Todos os Diplomas Emitidos (emitidos_2026.xls)
-              </label>
+              <label className="block text-sm font-semibold text-gray-600 mb-2">2. Diplomas Emitidos (emitidos_2026.xls)</label>
               <input 
                 type="file" 
                 accept=".xls,.xlsx" 
@@ -94,7 +85,6 @@ export default function App() {
                 className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 cursor-pointer border rounded-md p-2" 
               />
             </div>
-
             <button 
               onClick={handleProcessar} 
               disabled={carregando}
@@ -104,11 +94,18 @@ export default function App() {
             </button>
           </div>
         </main>
-      )}
-
-      {dadosProcessados && (
+      ) : (
+        // TELA DE RESULTADOS
         <main className="max-w-6xl mx-auto space-y-8">
-            {/* O restante do seu código de listagem vai aqui igual ao que você já tinha */}
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+                <h3 className="text-xl font-bold mb-4">Processamento Concluído</h3>
+                {/* Aqui você mantém a lógica de exibição dos resultados */}
+                <div className="flex gap-4">
+                    <button onClick={baixarRTF} className="bg-blue-600 text-white py-2 px-4 rounded">Baixar RTF</button>
+                    <button onClick={baixarExcel} className="bg-green-600 text-white py-2 px-4 rounded">Baixar Excel</button>
+                </div>
+            </div>
+
             <div className="text-center">
                 <button onClick={() => setDadosProcessados(null)} className="text-sm font-semibold text-gray-500 hover:text-gray-700 underline">
                 ← Voltar e Processar Novas Planilhas
