@@ -57,13 +57,20 @@ export default function App() {
 
   const limparRTF = (texto) => {
   if (!texto) return "";
-  // Esta regex remove os comandos de controle do RTF e chaves de formatação
+  
   return texto
-    .replace(/\\par/g, "\n")       // Substitui quebras de linha RTF por quebras reais
-    .replace(/\\tab/g, "\t")       // Substitui tabs
-    .replace(/\\[a-z0-9]+/g, "")   // Remove comandos técnicos (como \rtf1, \ansi, etc.)
-    .replace(/[{}]/g, "")          // Remove as chaves
-    .trim();                       // Remove espaços extras nas pontas
+    // 1. Substitui os marcadores técnicos por rótulos amigáveis ou espaços
+    .replace(/##ASS/g, "Assinatura:")
+    .replace(/##CAR/g, "Cargo:")
+    .replace(/##DAT/g, "Data:")
+    .replace(/##TEX/g, "") // O ##TEX não precisa aparecer, é só o corpo do texto
+    
+    // 2. Remove comandos técnicos do RTF
+    .replace(/\\par/g, "\n")
+    .replace(/\\tab/g, " ")
+    .replace(/\\[a-z0-9]+/g, "")
+    .replace(/[{}]/g, "")
+    .trim();
 };
 
   return (
