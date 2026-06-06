@@ -55,6 +55,17 @@ export default function App() {
     window.location.href = `${API_URL}/api/download-excel`;
   };
 
+  const limparRTF = (texto) => {
+  if (!texto) return "";
+  // Esta regex remove os comandos de controle do RTF e chaves de formatação
+  return texto
+    .replace(/\\par/g, "\n")       // Substitui quebras de linha RTF por quebras reais
+    .replace(/\\tab/g, "\t")       // Substitui tabs
+    .replace(/\\[a-z0-9]+/g, "")   // Remove comandos técnicos (como \rtf1, \ansi, etc.)
+    .replace(/[{}]/g, "")          // Remove as chaves
+    .trim();                       // Remove espaços extras nas pontas
+};
+
   return (
     <div className="min-h-screen bg-gray-50 p-8 font-sans text-gray-800">
       <header className="mb-8 border-b-4 border-green-600 bg-white p-6 shadow-sm text-center">
@@ -99,9 +110,7 @@ export default function App() {
         <main className="max-w-6xl mx-auto space-y-8">
           <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
             <h3 className="text-xl font-bold mb-4">Processamento Concluído</h3>
-                /* Aqui você mantém a lógica de exibição dos resultados */
-
-            /* 1. PRÉVIA DO TEXTO RTF */
+ 
             {dadosProcessados.previa_texto_rtf && (
               <div className="mb-6 p-4 bg-gray-50 border rounded-md max-h-60 overflow-y-auto whitespace-pre-wrap text-sm text-gray-700">
                 <h4 className="font-bold mb-2 underline">Prévia do Conteúdo (RTF):</h4>
