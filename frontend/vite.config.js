@@ -3,8 +3,10 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  base: './', // CRUCIAL para não dar tela branca
+  // Isto força o Vite a usar caminhos relativos para TUDO (JS e CSS)
+  base: './', 
   build: {
-    outDir: 'dist', // Onde o build será gerado
+    outDir: 'dist',
+    assetsDir: 'assets',
   }
 })
