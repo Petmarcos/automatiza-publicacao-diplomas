@@ -58,29 +58,27 @@ def descobrir_mes_referencia(df_final):
 
 
 def gerar_texto_rtf(df_final, resumo_livros, total_geral):
-    # ... (lógica de data/livros igual) ...
+    # ... (lógica de data/meses/livros permanece a mesma) ...
 
-    # 1. Definimos a Calibri como \f0 na tabela de fontes
-    # 2. \fs18 define o tamanho 9 (18 meios-pontos)
-def gerar_texto_rtf(df_final, resumo_livros, total_geral):
-    # ... (seu código de data/meses/livros igual ao anterior) ...
-
-    # O formato de página do LibreOffice exige tanto o comando geral quanto o da seção (sxn)
-    # 9cm = 5103 twips | 29.7cm = 16838 twips
-    # Margens: 1cm = 567 | 0.43cm = 244
-    config_pagina = r"\landscape\paperh11906\paperw16838\margl567\margr244\margt567\margb238\sectd\pgwsxn16838\pghsxn11906\marglsxn567\margrsxn244\margtsxn567\margbsxn238"
+    # 1. Ajuste Técnico para Imprensa Nacional (9cm x 29.7cm)
+    # Como o Writer força o modo paisagem para esse formato, invertemos os valores:
+    # Largura (9cm) = 5103 twips | Altura (29.7cm) = 16838 twips
+    # O comando \landscape no RTF força o Writer a tratar a largura como altura.
+    config_pagina = r"\landscape\paperh5103\paperw16838\margl567\margr244\margt567\margb238"
     
+    # 2. Definição do template com os alinhamentos solicitados
     template_rtf = f"""{{\\rtf1\\ansi\\deff0 
-{{\\fonttbl{{\\f0 Arial;}}}}
+{{\\fonttbl{{\\f0 Calibri;}}}}
 {config_pagina}
-{{\\b ##ATO\\b0  AVISO DE REGISTRO DE DIPLOMAS}}\\par
-{{\\b ##TEX\\b0  O Instituto Capivara Learning, CNPJ no 10.738.898/0001-75, em atendimento ao disposto no art. 21 da Portaria MEC n° 1.095 de 25 de outubro de 2018 informa que, no mes de {mes_referencia} do corrente ano, registrou {total_geral} diplomas assim distribuidos: {texto_livros_corrido}.}}\\par
-A relacao dos diplomas registrados podera ser consultada em ate trinta dias, no endereco eletronico https://www.icl.edu.br/pre/controle-academico/erd.\\par
+\\pard\\qc\\b ##ATO AVISO DE REGISTRO DE DIPLOMAS\\b0\\par
 \\par
-{{\\b ##DAT\\b0  Joao Pessoa, {data_assinatura}}}\\par
+\\pard\\qj\\fi567\\b ##TEX\\b0  O Instituto Capivara Learning, CNPJ no 10.738.898/0001-75, em atendimento ao disposto no art. 21 da Portaria MEC n° 1.095 de 25 de outubro de 2018 informa que, no mes de {mes_referencia} do corrente ano, registrou {total_geral} diplomas assim distribuidos: {texto_livros_corrido}.\\par
+\\pard\\qj\\fi567 A relacao dos diplomas registrados podera ser consultada em ate trinta dias, no endereco eletronico https://www.icl.edu.br/pre/controle-academico/erd.\\par
 \\par
-{{\\b ##ASS\\b0  Capivara Svenson}}\\par
-{{\\b ##CAR\\b0  Reitora}}\\par
+\\pard\\qc\\b ##DAT Joao Pessoa, {data_assinatura}\\b0\\par
+\\par
+\\pard\\qc\\b ##ASS Capivara Svenson\\b0\\par
+\\pard\\qc\\b ##CAR Reitora\\b0\\par
 }}"""
     
     return template_rtf
