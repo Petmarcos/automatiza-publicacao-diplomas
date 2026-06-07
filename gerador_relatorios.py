@@ -62,7 +62,7 @@ def gerar_texto_rtf(df_final, resumo_livros, total_geral):
     
     # Dicionário de tradução para garantir Português
     traducao_meses = {
-        'january': 'janeiro', 'february': 'fevereiro', 'march': 'março', 'april': 'abril',
+        'january': 'janeiro', 'february': 'fevereiro', 'march': 'marco', 'april': 'abril',
         'may': 'maio', 'june': 'junho', 'july': 'julho', 'august': 'agosto',
         'september': 'setembro', 'october': 'outubro', 'november': 'novembro', 'december': 'dezembro'
     }
@@ -89,12 +89,13 @@ def gerar_texto_rtf(df_final, resumo_livros, total_geral):
         
         texto_livros_corrido = "; ".join(trechos_livros)
 
-    # 2. Configurações de página (A4, Retrato, Fonte 9)
-    # \paperw11906\paperh16838 = A4 | \margl1440 = 2.54cm
-    config_pagina = r"\paperw11906\paperh16838\portrait\margl1440\margr1440\margt1440\margb1440\fs18"
+    # O formato de página do LibreOffice exige tanto o comando geral quanto o da seção (sxn)
+    # 9cm = 5103 twips | 29.7cm = 16838 twips
+    # Margens: 1cm = 567 | 0.43cm = 244
+    config_pagina = r"\landscape\paperh11906\paperw16838\margl567\margr244\margt567\margb238\sectd\pgwsxn16838\pghsxn11906\marglsxn567\margrsxn244\margtsxn567\margbsxn238"
     
     template_rtf = f"""{{\\rtf1\\ansi\\deff0 
-{{\\fonttbl{{\\f0 Arial;}}\\f0}}
+{{\\fonttbl{{\\f0 Arial;}}}}
 {config_pagina}
 {{\\b ##ATO\\b0  AVISO DE REGISTRO DE DIPLOMAS}}\\par
 {{\\b ##TEX\\b0  O Instituto Capivara Learning, CNPJ no 10.738.898/0001-75, em atendimento ao disposto no art. 21 da Portaria MEC n° 1.095 de 25 de outubro de 2018 informa que, no mes de {mes_referencia} do corrente ano, registrou {total_geral} diplomas assim distribuidos: {texto_livros_corrido}.}}\\par
@@ -107,3 +108,4 @@ A relacao dos diplomas registrados podera ser consultada em ate trinta dias, no 
 }}"""
     
     return template_rtf
+    
