@@ -79,15 +79,21 @@ def gerar_texto_rtf(df_final, resumo_livros, total_geral):
             trechos_livros.append(f"livro {livro} com {total} registros numerados no intervalo de {inicio} a {fim}")
     
     texto_livros_corrido = "; ".join(trechos_livros)
+
     
-    template_rtf = f"""{{\\rtf1\\ansi\\deff0
-##ATO AVISO DE REGISTRO DE DIPLOMAS\\par
-##TEX O Instituto Capivara Learning, CNPJ no 10.738.898/0001-75, em atendimento ao disposto no art. 21 da Portaria MEC n° 1.095 de 25 de outubro de 2018 informa que, no mes de {mes_referencia} do corrente ano, registrou {total_geral} diplomas assim distribuidos: {texto_livros_corrido}.\\par
-A relacao dos diplomas registrados podera ser consultada em ate trinta dias, no endereco eletronico https://www.icl.edu.br/pre/controle-academico/erd.\\par
-##DAT Joao Pessoa, {data_assinatura}\\par
-##ASS Capivara Svenson\\par
-Reitora\\par
-##CAR
+    template_rtf = f"""{{\\rtf1\\ansi\\deff0 
+{{\\fonttbl{{\\f0 Calibri;}}}}
+{config_pagina}
+\\pard\\qc\\b ##ATO AVISO DE REGISTRO DE DIPLOMAS\\b0\\par
+\\par
+\\pard\\qj\\fi567\\li0 \\b ##TEX\\b0  \\tab O Instituto Capivara Learning, CNPJ no 10.738.898/0001-75, em atendimento ao disposto no art. 21 da Portaria MEC n° 1.095 de 25 de outubro de 2018 informa que, no mes de {mes_referencia} do corrente ano, registrou {total_geral} diplomas assim distribuidos: {texto_livros_corrido}.\\par
+\\par
+\\pard\\qj\\fi567\\li0 \\tab A relacao dos diplomas registrados podera ser consultada em ate trinta dias, no endereco eletronico https://www.icl.edu.br/pre/controle-academico/erd.\\par
+\\par
+\\pard\\qc\\b ##DAT Joao Pessoa, {data_assinatura}\\b0\\par
+\\par
+\\pard\\qc\\b ##ASS Capivara Svenson\\b0\\par
+\\pard\\qc\\b ##CAR Reitora\\b0\\par
 }}"""
     
     return template_rtf
