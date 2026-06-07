@@ -58,36 +58,52 @@ def descobrir_mes_referencia(df_final):
 
 
 def gerar_texto_rtf(df_final, resumo_livros, total_geral):
-    """
-    Monta o texto padrão do DOU preenchendo dinamicamente os dados e intervalos de livros.
-    """
-    mes_referencia, ano_referencia = descobrir_mes_referencia(df_final)
-    data_assinatura = datetime.now().strftime("%d de %B de %Y")
+    mes_referencia_orig, _ = descobrir_mes_referencia(df_final)
     
-    trechos_livros = []
-    for linha in resumo_livros:
-        livro = linha.Livro
-        total = linha.Total_Registros
-        inicio = int(linha.Primeiro_Registro) if not pd.isna(linha.Primeiro_Registro) else 0
-        fim = int(linha.Ultimo_Registro) if not pd.isna(linha.Ultimo_Registro) else 0
+    # Dicionário de tradução para garantir Português
+    traducao_meses = {
+        'january': 'janeiro', 'february': 'fevereiro', 'march': 'março', 'april': 'abril',
+        'may': 'maio', 'june': 'junho', 'july': 'julho', 'august': 'agosto',
+        'september': 'setembro', 'october': 'outubro', 'november': 'novembro', 'december': 'dezembro'
+    }
+    mes_referencia = traducao_meses.get(mes_referencia_orig.lower(), mes_referencia_orig)
+    
+    hoje = datetime.now()
+    data_assinatura = f"{hoje.day} de {traducao_meses.get(hoje.strftime('%B').lower())} de {hoje.year}"
+    
+    # 1. Declaração da variável ANTES do loop
+    texto_livros_corrido = ""
+    
+    if resumo_livros:
+        trechos_livros = []
+        for linha in resumo_livros:
+            inicio = int(linha.Primeiro_Registro) if not pd.isna(linha.Primeiro_Registro) else 0
+            fim = int(linha.Ultimo_Registro) if not pd.isna(linha.Ultimo_Registro) else 0
+            total = linha.Total_Registros
+            if total == 1:
+                trechos_livros.append(f"livro {linha.Livro} com 1 registro numerado com o numero {inicio}")
+            elif total == 2:
+                trechos_livros.append(f"livro {linha.Livro} com 2 registros numerados com os numeros {inicio} e {fim}")
+            else:
+                trechos_livros.append(f"livro {linha.Livro} com {total} registros numerados no intervalo de {inicio} a {fim}")
         
-        if total == 1:
-            trechos_livros.append(f"livro {livro} com 1 registro numerado com o numero {inicio}")
-        elif total == 2:
-            trechos_livros.append(f"livro {livro} com 2 registros numerados com os numeros {inicio} e {fim}")
-        else:
-            trechos_livros.append(f"livro {livro} com {total} registros numerados no intervalo de {inicio} a {fim}")
+        texto_livros_corrido = "; ".join(trechos_livros)
+
+    # 2. Configurações de página (A4, Retrato, Fonte 9)
+    # \paperw11906\paperh16838 = A4 | \margl1440 = 2.54cm
+    config_pagina = r"\paperw11906\paperh16838\portrait\margl1440\margr1440\margt1440\margb1440\fs18"
     
-    texto_livros_corrido = "; ".join(trechos_livros)
-    
-    template_rtf = f"""{{\\rtf1\\ansi\\deff0
-##ATO AVISO DE REGISTRO DE DIPLOMAS\\par
-##TEX O Instituto Capivara Learning, CNPJ no 10.738.898/0001-75, em atendimento ao disposto no art. 21 da Portaria MEC n° 1.095 de 25 de outubro de 2018 informa que, no mes de {mes_referencia} do corrente ano, registrou {total_geral} diplomas assim distribuidos: {texto_livros_corrido}.\\par
+    template_rtf = f"""{{\\rtf1\\ansi\\deff0 
+{{\\fonttbl{{\\f0 Arial;}}\\f0}}
+{config_pagina}
+{{\\b ##ATO\\b0  AVISO DE REGISTRO DE DIPLOMAS}}\\par
+{{\\b ##TEX\\b0  O Instituto Capivara Learning, CNPJ no 10.738.898/0001-75, em atendimento ao disposto no art. 21 da Portaria MEC n° 1.095 de 25 de outubro de 2018 informa que, no mes de {mes_referencia} do corrente ano, registrou {total_geral} diplomas assim distribuidos: {texto_livros_corrido}.}}\\par
 A relacao dos diplomas registrados podera ser consultada em ate trinta dias, no endereco eletronico https://www.icl.edu.br/pre/controle-academico/erd.\\par
-##DAT Joao Pessoa, {data_assinatura}\\par
-##ASS Capivara Svenson\\par
-Reitora\\par
-##CAR
+\\par
+{{\\b ##DAT\\b0  Joao Pessoa, {data_assinatura}}}\\par
+\\par
+{{\\b ##ASS\\b0  Capivara Svenson}}\\par
+{{\\b ##CAR\\b0  Reitora}}\\par
 }}"""
     
     return template_rtf
