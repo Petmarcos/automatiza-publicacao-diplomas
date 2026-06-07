@@ -59,35 +59,40 @@ def descobrir_mes_referencia(df_final):
 
 def gerar_texto_rtf(df_final, resumo_livros, total_geral):
     """
-    Monta o texto padrão do DOU preenchendo dinamicamente os dados e intervalos de livros.
+    Monta o texto padrão do DOU com configurações de página (9cm x 29,7cm)
+    compatíveis com a Imprensa Nacional.
     """
     mes_referencia, ano_referencia = descobrir_mes_referencia(df_final)
     data_assinatura = datetime.now().strftime("%d de %B de %Y")
     
+    # ... (seu código de trechos_livros continua igual)
     trechos_livros = []
     for linha in resumo_livros:
-        livro = linha.Livro
-        total = linha.Total_Registros
+        # ... lógica de trechos ...
         inicio = int(linha.Primeiro_Registro) if not pd.isna(linha.Primeiro_Registro) else 0
         fim = int(linha.Ultimo_Registro) if not pd.isna(linha.Ultimo_Registro) else 0
-        
+        total = linha.Total_Registros
         if total == 1:
-            trechos_livros.append(f"livro {livro} com 1 registro numerado com o numero {inicio}")
+            trechos_livros.append(f"livro {linha.Livro} com 1 registro numerado com o numero {inicio}")
         elif total == 2:
-            trechos_livros.append(f"livro {livro} com 2 registros numerados com os numeros {inicio} e {fim}")
+            trechos_livros.append(f"livro {linha.Livro} com 2 registros numerados com os numeros {inicio} e {fim}")
         else:
-            trechos_livros.append(f"livro {livro} com {total} registros numerados no intervalo de {inicio} a {fim}")
+            trechos_livros.append(f"livro {linha.Livro} com {total} registros numerados no intervalo de {inicio} a {fim}")
     
     texto_livros_corrido = "; ".join(trechos_livros)
     
-    template_rtf = f"""{{\\rtf1\\ansi\\deff0
+    # CONFIGURAÇÕES DE PÁGINA (Valores em twips)
+    # Largura: 9cm = 5103 | Altura: 29.7cm = 16839
+    # Margens: Esq 1cm=567 | Dir 0.43cm=244 | Cima 1cm=567 | Baixo 0.42cm=238
+    config_pagina = r"\paperw5103\paperh16839\margl567\margr244\margt567\margb238"
+    
+    template_rtf = f"""{{\\rtf1\\ansi\\deff0{config_pagina}
 ##ATO AVISO DE REGISTRO DE DIPLOMAS\\par
 ##TEX O Instituto Capivara Learning, CNPJ no 10.738.898/0001-75, em atendimento ao disposto no art. 21 da Portaria MEC n° 1.095 de 25 de outubro de 2018 informa que, no mes de {mes_referencia} do corrente ano, registrou {total_geral} diplomas assim distribuidos: {texto_livros_corrido}.\\par
 A relacao dos diplomas registrados podera ser consultada em ate trinta dias, no endereco eletronico https://www.icl.edu.br/pre/controle-academico/erd.\\par
-##DAT Joao Pessoa, {data_assinatura}\\par
-##ASS Capivara Svenson\\par
-Reitora\\par
-##CAR
+##DAT                Joao Pessoa, {data_assinatura}\\par
+##ASS                     Capivara Svenson\\par
+##CAR                         Reitora\\par
 }}"""
     
     return template_rtf
