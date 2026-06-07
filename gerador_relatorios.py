@@ -97,16 +97,15 @@ def gerar_texto_rtf(df_final, resumo_livros, total_geral):
    template_rtf = f"""{{\\rtf1\\ansi\\deff0 
 {{\\fonttbl{{\\f0 Calibri;}}}}
 {config_pagina}
-{{\\qc\\b ##ATO\\b0  AVISO DE REGISTRO DE DIPLOMAS}}\\par
+\\pard\\qc\\b ##ATO AVISO DE REGISTRO DE DIPLOMAS\\b0\\par
 \\par
-{{\\qj\\fi567 \\b ##TEX\\b0  O Instituto Capivara Learning, CNPJ no 10.738.898/0001-75, em atendimento ao disposto no art. 21 da Portaria MEC n° 1.095 de 25 de outubro de 2018 informa que, no mes de {mes_referencia} do corrente ano, registrou {total_geral} diplomas assim distribuidos: {texto_livros_corrido}.}}\\par
-{{\\qj\\fi567 A relacao dos diplomas registrados podera ser consultada em ate trinta dias, no endereco eletronico https://www.icl.edu.br/pre/controle-academico/erd.}}\\par
+\\pard\\qj\\fi567\\b ##TEX\\b0  O Instituto Capivara Learning, CNPJ no 10.738.898/0001-75, em atendimento ao disposto no art. 21 da Portaria MEC n° 1.095 de 25 de outubro de 2018 informa que, no mes de {mes_referencia} do corrente ano, registrou {total_geral} diplomas assim distribuidos: {texto_livros_corrido}.\\par
+\\pard\\qj\\fi567 A relacao dos diplomas registrados podera ser consultada em ate trinta dias, no endereco eletronico https://www.icl.edu.br/pre/controle-academico/erd.\\par
 \\par
-{{\\qc\\b ##DAT\\b0  Joao Pessoa, {data_assinatura}}}\\par
+\\pard\\qc\\b ##DAT Joao Pessoa, {data_assinatura}\\b0\\par
 \\par
-{{\\qc\\b ##ASS\\b0  Capivara Svenson}}\\par
-{{\\qc\\b ##CAR\\b0  Reitora}}\\par
+\\pard\\qc\\b ##ASS Capivara Svenson\\b0\\par
+\\pard\\qc\\b ##CAR Reitora\\b0\\par
 }}"""
-    
     return template_rtf
     
