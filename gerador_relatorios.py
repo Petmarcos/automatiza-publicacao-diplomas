@@ -58,41 +58,36 @@ def descobrir_mes_referencia(df_final):
 
 
 def gerar_texto_rtf(df_final, resumo_livros, total_geral):
-    """
-    Monta o texto padrão do DOU com configurações de página (9cm x 29,7cm)
-    compatíveis com a Imprensa Nacional.
-    """
     mes_referencia, ano_referencia = descobrir_mes_referencia(df_final)
-    data_assinatura = datetime.now().strftime("%d de %B de %Y")
     
-    # ... (seu código de trechos_livros continua igual)
-    trechos_livros = []
-    for linha in resumo_livros:
-        # ... lógica de trechos ...
-        inicio = int(linha.Primeiro_Registro) if not pd.isna(linha.Primeiro_Registro) else 0
-        fim = int(linha.Ultimo_Registro) if not pd.isna(linha.Ultimo_Registro) else 0
-        total = linha.Total_Registros
-        if total == 1:
-            trechos_livros.append(f"livro {linha.Livro} com 1 registro numerado com o numero {inicio}")
-        elif total == 2:
-            trechos_livros.append(f"livro {linha.Livro} com 2 registros numerados com os numeros {inicio} e {fim}")
-        else:
-            trechos_livros.append(f"livro {linha.Livro} com {total} registros numerados no intervalo de {inicio} a {fim}")
+    # 4. FORÇAR DATA EM PORTUGUÊS (ignora a configuração do servidor)
+    meses_pt = {
+        'january': 'janeiro', 'february': 'fevereiro', 'march': 'março', 'april': 'abril',
+        'may': 'maio', 'june': 'junho', 'july': 'julho', 'august': 'agosto',
+        'september': 'setembro', 'october': 'outubro', 'november': 'novembro', 'december': 'dezembro'
+    }
     
-    texto_livros_corrido = "; ".join(trechos_livros)
+    hoje = datetime.now()
+    mes_nome = meses_pt.get(hoje.strftime("%B").lower(), hoje.strftime("%B"))
+    data_assinatura = f"{hoje.day} de {mes_nome} de {hoje.year}"
     
-    # CONFIGURAÇÕES DE PÁGINA (Valores em twips)
-    # Largura: 9cm = 5103 | Altura: 29.7cm = 16839
-    # Margens: Esq 1cm=567 | Dir 0.43cm=244 | Cima 1cm=567 | Baixo 0.42cm=238
-    config_pagina = r"\paperw5103\paperh16839\margl567\margr244\margt567\margb238"
+    # ... (trechos_livros continua igual)
+    
+    # 1. CONFIGURAÇÃO DE PÁGINA (Retrato)
+    # \portrait força o modo retrato
+    # \fs18 define tamanho 9 (18/2)
+    # \paperw11906\paperh16838 é o padrão A4 em twips
+    config_pagina = r"\paperw11906\paperh16838\portrait\margl1440\margr1440\margt1440\margb1440\fs18"
     
     template_rtf = f"""{{\\rtf1\\ansi\\deff0{config_pagina}
-##ATO AVISO DE REGISTRO DE DIPLOMAS\\par
-##TEX O Instituto Capivara Learning, CNPJ no 10.738.898/0001-75, em atendimento ao disposto no art. 21 da Portaria MEC n° 1.095 de 25 de outubro de 2018 informa que, no mes de {mes_referencia} do corrente ano, registrou {total_geral} diplomas assim distribuidos: {texto_livros_corrido}.\\par
+{{\\b ##ATO\\b0  AVISO DE REGISTRO DE DIPLOMAS}}\\par
+{{\\b ##TEX\\b0  O Instituto Capivara Learning, CNPJ no 10.738.898/0001-75, em atendimento ao disposto no art. 21 da Portaria MEC n° 1.095 de 25 de outubro de 2018 informa que, no mes de {mes_referencia} do corrente ano, registrou {total_geral} diplomas assim distribuidos: {texto_livros_corrido}.}}\\par
 A relacao dos diplomas registrados podera ser consultada em ate trinta dias, no endereco eletronico https://www.icl.edu.br/pre/controle-academico/erd.\\par
-##DAT                Joao Pessoa, {data_assinatura}\\par
-##ASS                     Capivara Svenson\\par
-##CAR                         Reitora\\par
+\\par
+{{\\b ##DAT\\b0  Joao Pessoa, {data_assinatura}}}\\par
+\\par
+{{\\b ##ASS\\b0  Capivara Svenson}}\\par
+{{\\b ##CAR\\b0  Reitora}}\\par
 }}"""
     
     return template_rtf
