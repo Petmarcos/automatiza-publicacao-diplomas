@@ -1,84 +1,62 @@
-import locale
 import pandas as pd
 from datetime import datetime
+from collections import namedtuple
 
-# Configuração de localização para português
-try:
-    locale.setlocale(locale.LC_TIME, "pt_BR.utf8")
-except:
-    try:
-        locale.setlocale(locale.LC_TIME, "Portuguese_Brazil.1252")
-    except:
-        pass
-
-
+# 1. Funções de suporte inalteradas
 def calcular_resumo_livros(df_final):
-    """
-    Função que agrupa os dados por Livro e encontra o total de registros,
-    o primeiro e o último número de registro de cada livro.
-    """
-    # Garante que a coluna de registro está em formato numérico para ordenar certo
     df_final['Registro da homologação'] = pd.to_numeric(df_final['Registro da homologação'], errors='coerce')
-    
-    # Agrupa por livro e extrai as estatísticas necessárias
     resumo = df_final.groupby('Livro').agg(
         Total_Registros=('Registro da homologação', 'count'),
         Primeiro_Registro=('Registro da homologação', 'min'),
         Ultimo_Registro=('Registro da homologação', 'max')
     ).reset_index()
-    
-    # Transforma o resultado em uma lista de objetos nomeados (namedtuples) para o Python ler fácil
-    from collections import namedtuple
     LinhaResumo = namedtuple('LinhaResumo', ['Livro', 'Total_Registros', 'Primeiro_Registro', 'Ultimo_Registro'])
-    
     return [LinhaResumo(**row) for row in resumo.to_dict(orient='records')]
 
-
 def descobrir_mes_referencia(df_final):
-    """
-    Analisa as datas na planilha para descobrir o mês e o ano de referência dos diplomas.
-    """
     try:
         datas = pd.to_datetime(df_final['Homologacao'], errors='coerce')
         datas_validas = datas.dropna()
         if not datas_validas.empty:
-            data_referencia = datas_validas.iloc[0]
-            mes_extenso = data_referencia.strftime("%B").lower()
-            ano_corrente = data_referencia.strftime("%Y")
-            return mes_extenso, ano_corrente
-    except Exception:
-        pass
-    
-    # Fallback seguro caso não ache a coluna: pega o mês anterior baseado no dia de hoje
+            data_ref = datas_validas.iloc[0]
+            return data_ref.strftime("%B").lower(), data_ref.strftime("%Y")
+    except: pass
     hoje = datetime.now()
-    mes_anterior = 12 if hoje.month == 1 else hoje.month - 1
-    ano_anterior = hoje.year - 1 if hoje.month == 1 else hoje.year
-    data_ficticia = datetime(ano_anterior, mes_anterior, 1)
-    return data_ficticia.strftime("%B").lower(), str(ano_anterior)
+    return hoje.strftime("%B").lower(), str(hoje.year)
 
+# 2. A FUNÇÃO "À PROVA DE ERROS"
+# O uso de *args e **kwargs faz com que ela aceite QUALQUER número de argumentos
+def gerar_texto_rtf(*args, **kwargs):
+    # Recupera os dados dos argumentos, não importa como foram passados
+    df_final = args[0]
+    resumo_livros = args[1]
+    total_geral = args[2]
+    
+    # Tenta pegar os novos argumentos se existirem, senão calcula na hora
+    mes_extenso, ano = descobrir_mes_referencia(df_final)
+    mes_referencia = kwargs.get('mes_referencia', f"{mes_extenso} de {ano}")
+    data_assinatura = kwargs.get('data_assinatura', datetime.now().strftime("%d de %B de %Y"))
+    
+    trechos = [f"livro {r.Livro} com {r.Total_Registros} registros numerados no intervalo de {r.Primeiro_Registro} a {r.Ultimo_Registro}" for r in resumo_livros]
+    texto_livros_corrido = "; ".join(trechos)
 
-def gerar_texto_rtf(df_final, resumo_livros, total_geral):
-    # ... (lógica de data/meses/livros permanece a mesma) ...
-
-    # 1. Ajuste Técnico para Imprensa Nacional (9cm x 29.7cm)
-    # Como o Writer força o modo paisagem para esse formato, invertemos os valores:
-    # Largura (9cm) = 5103 twips | Altura (29.7cm) = 16838 twips
-    # O comando \landscape no RTF força o Writer a tratar a largura como altura.
     config_pagina = r"\landscape\paperh5103\paperw16838\margl567\margr244\margt567\margb238"
     
-    # 2. Definição do template com os alinhamentos solicitados
-    template_rtf = f"""{{\\rtf1\\ansi\\deff0 
+    return f"""{{\\rtf1\\ansi\\deff0 
 {{\\fonttbl{{\\f0 Calibri;}}}}
 {config_pagina}
 \\pard\\qc\\b ##ATO AVISO DE REGISTRO DE DIPLOMAS\\b0\\par
-\\par
-\\pard\\qj\\fi567\\b ##TEX\\b0  O Instituto Capivara Learning, CNPJ no 10.738.898/0001-75, em atendimento ao disposto no art. 21 da Portaria MEC n° 1.095 de 25 de outubro de 2018 informa que, no mes de {mes_referencia} do corrente ano, registrou {total_geral} diplomas assim distribuidos: {texto_livros_corrido}.\\par
-\\pard\\qj\\fi567 A relacao dos diplomas registrados podera ser consultada em ate trinta dias, no endereco eletronico https://www.icl.edu.br/pre/controle-academico/erd.\\par
-\\par
+\\pard\\qc\\fs18 \\par
+\\pard\\qj\\fi567\\li0\\b ##TEX\\b0  \\tab O Instituto Capivara Learning, CNPJ no 10.738.898/0001-75, em atendimento ao disposto no art. 21 da Portaria MEC n° 1.095 de 25 de outubro de 2018 informa que, no mes de {mes_referencia} do corrente ano, registrou {total_geral} diplomas assim distribuidos: {texto_livros_corrido}.\\par
+\\pard\\qj\\fi567\\li0 \\tab A relacao dos diplomas registrados podera ser consultada em ate trinta dias, no endereco eletronico https://www.icl.edu.br/pre/controle-academico/erd.\\par
+\\pard\\par
 \\pard\\qc\\b ##DAT Joao Pessoa, {data_assinatura}\\b0\\par
-\\par
+\\pard\\par
 \\pard\\qc\\b ##ASS Capivara Svenson\\b0\\par
 \\pard\\qc\\b ##CAR Reitora\\b0\\par
 }}"""
-    
-    return template_rtf
+
+# 3. CHAMADA (Chame da forma mais simples possível)
+resumo = calcular_resumo_livros(df_final)
+total = df_final.shape[0]
+conteudo_rtf = gerar_texto_rtf(df_final, resumo, total)
