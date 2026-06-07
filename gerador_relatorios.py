@@ -2,7 +2,7 @@ import pandas as pd
 from datetime import datetime
 from collections import namedtuple
 
-# 1. Funções de suporte inalteradas
+# 1. Funções de suporte
 def calcular_resumo_livros(df_final):
     df_final['Registro da homologação'] = pd.to_numeric(df_final['Registro da homologação'], errors='coerce')
     resumo = df_final.groupby('Livro').agg(
@@ -24,19 +24,15 @@ def descobrir_mes_referencia(df_final):
     hoje = datetime.now()
     return hoje.strftime("%B").lower(), str(hoje.year)
 
-# 2. A FUNÇÃO "À PROVA DE ERROS"
-# O uso de *args e **kwargs faz com que ela aceite QUALQUER número de argumentos
-def gerar_texto_rtf(*args, **kwargs):
-    # Recupera os dados dos argumentos, não importa como foram passados
-    df_final = args[0]
-    resumo_livros = args[1]
-    total_geral = args[2]
-    
-    # Tenta pegar os novos argumentos se existirem, senão calcula na hora
-    mes_extenso, ano = descobrir_mes_referencia(df_final)
-    mes_referencia = kwargs.get('mes_referencia', f"{mes_extenso} de {ano}")
-    data_assinatura = kwargs.get('data_assinatura', datetime.now().strftime("%d de %B de %Y"))
-    
+# 2. FUNÇÃO COM VALORES PADRÃO (Impede o erro de argumentos faltantes)
+def gerar_texto_rtf(df_final, resumo_livros, total_geral, mes_referencia=None, data_assinatura=None):
+    # Se não forem passados, calcula automaticamente
+    if mes_referencia is None:
+        mes, ano = descobrir_mes_referencia(df_final)
+        mes_referencia = f"{mes} de {ano}"
+    if data_assinatura is None:
+        data_assinatura = datetime.now().strftime("%d de %B de %Y")
+        
     trechos = [f"livro {r.Livro} com {r.Total_Registros} registros numerados no intervalo de {r.Primeiro_Registro} a {r.Ultimo_Registro}" for r in resumo_livros]
     texto_livros_corrido = "; ".join(trechos)
 
@@ -56,7 +52,9 @@ def gerar_texto_rtf(*args, **kwargs):
 \\pard\\qc\\b ##CAR Reitora\\b0\\par
 }}"""
 
-# 3. CHAMADA (Chame da forma mais simples possível)
+# 3. CHAMADA NO SEU CÓDIGO (Use esta estrutura no seu arquivo principal)
+# O fato de usarmos os parâmetros com "=None" na definição acima
+# permite que esta linha funcione perfeitamente:
 resumo = calcular_resumo_livros(df_final)
 total = df_final.shape[0]
 conteudo_rtf = gerar_texto_rtf(df_final, resumo, total)
