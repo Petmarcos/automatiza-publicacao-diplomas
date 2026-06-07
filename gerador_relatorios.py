@@ -58,40 +58,32 @@ def descobrir_mes_referencia(df_final):
 
 
 def gerar_texto_rtf(df_final, resumo_livros, total_geral):
-    mes_referencia, ano_referencia = descobrir_mes_referencia(df_final)
-    
-    # 4. FORÇAR DATA EM PORTUGUÊS
-    meses_pt = {
+
+# Dicionário de tradução manual para garantir que nunca falhe
+    traducao_meses = {
         'january': 'janeiro', 'february': 'fevereiro', 'march': 'março', 'april': 'abril',
         'may': 'maio', 'june': 'junho', 'july': 'julho', 'august': 'agosto',
-        'september': 'setembro', 'october': 'october', 'november': 'novembro', 'december': 'dezembro'
+        'september': 'setembro', 'october': 'outubro', 'november': 'novembro', 'december': 'dezembro'
     }
-    hoje = datetime.now()
-    mes_nome = meses_pt.get(hoje.strftime("%B").lower(), hoje.strftime("%B"))
-    data_assinatura = f"{hoje.day} de {mes_nome} de {hoje.year}"
     
-    # Processamento dos livros
-    trechos_livros = []
-    for linha in resumo_livros:
-        inicio = int(linha.Primeiro_Registro) if not pd.isna(linha.Primeiro_Registro) else 0
-        fim = int(linha.Ultimo_Registro) if not pd.isna(linha.Ultimo_Registro) else 0
-        total = linha.Total_Registros
-        if total == 1:
-            trechos_livros.append(f"livro {linha.Livro} com 1 registro numerado com o numero {inicio}")
-        elif total == 2:
-            trechos_livros.append(f"livro {linha.Livro} com 2 registros numerados com os numeros {inicio} e {fim}")
-        else:
-            trechos_livros.append(f"livro {linha.Livro} com {total} registros numerados no intervalo de {inicio} a {fim}")
+    # Obtém o mês original (que está vindo em inglês)
+    mes_orig, ano_referencia = descobrir_mes_referencia(df_final)
     
-    # A variável precisa ser definida aqui, dentro da função
-    texto_livros_corrido = "; ".join(trechos_livros)
+    # Força a tradução usando o dicionário acima
+    mes_referencia = traducao_meses.get(mes_orig.lower(), mes_orig)
+
+
+    # ... (seu código de data e trechos_livros continua igual) ...
+
+    # Conversão para Twips (1cm = 567 twips)
+    # 2.54cm = 1440 twips (padrão de margem)
+    # A4 = 21cm x 29.7cm = 11906 x 16838 twips
     
-    # 1. CONFIGURAÇÃO DE PÁGINA (Retrato + Fonte 9)
-    # \paperw11906\paperh16838 (A4 em twips)
-    config_pagina = r"\paperw11906\paperh16838\portrait\margl1440\margr1440\margt1440\margb1440\fs18"
+    config_pagina = r"\paperw11906\paperh16838\margl1440\margr1440\margt1440\margb1440\portrait\fs18"
     
-    # Agora o template reconhece texto_livros_corrido
-    template_rtf = f"""{{\\rtf1\\ansi\\deff0{config_pagina}
+    template_rtf = f"""{{\\rtf1\\ansi\\deff0 
+{{\\fonttbl{{\\f0 Arial;}}}}
+{config_pagina}
 {{\\b ##ATO\\b0  AVISO DE REGISTRO DE DIPLOMAS}}\\par
 {{\\b ##TEX\\b0  O Instituto Capivara Learning, CNPJ no 10.738.898/0001-75, em atendimento ao disposto no art. 21 da Portaria MEC n° 1.095 de 25 de outubro de 2018 informa que, no mes de {mes_referencia} do corrente ano, registrou {total_geral} diplomas assim distribuidos: {texto_livros_corrido}.}}\\par
 A relacao dos diplomas registrados podera ser consultada em ate trinta dias, no endereco eletronico https://www.icl.edu.br/pre/controle-academico/erd.\\par
