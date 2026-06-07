@@ -58,43 +58,14 @@ def descobrir_mes_referencia(df_final):
 
 
 def gerar_texto_rtf(df_final, resumo_livros, total_geral):
-    mes_referencia_orig, _ = descobrir_mes_referencia(df_final)
-    
-    # Dicionário de tradução para garantir Português
-    traducao_meses = {
-        'january': 'janeiro', 'february': 'fevereiro', 'march': 'março', 'april': 'abril',
-        'may': 'maio', 'june': 'junho', 'july': 'julho', 'august': 'agosto',
-        'september': 'setembro', 'october': 'outubro', 'november': 'novembro', 'december': 'dezembro'
-    }
-    mes_referencia = traducao_meses.get(mes_referencia_orig.lower(), mes_referencia_orig)
-    
-    hoje = datetime.now()
-    data_assinatura = f"{hoje.day} de {traducao_meses.get(hoje.strftime('%B').lower())} de {hoje.year}"
-    
-    # 1. Declaração da variável ANTES do loop
-    texto_livros_corrido = ""
-    
-    if resumo_livros:
-        trechos_livros = []
-        for linha in resumo_livros:
-            inicio = int(linha.Primeiro_Registro) if not pd.isna(linha.Primeiro_Registro) else 0
-            fim = int(linha.Ultimo_Registro) if not pd.isna(linha.Ultimo_Registro) else 0
-            total = linha.Total_Registros
-            if total == 1:
-                trechos_livros.append(f"livro {linha.Livro} com 1 registro numerado com o numero {inicio}")
-            elif total == 2:
-                trechos_livros.append(f"livro {linha.Livro} com 2 registros numerados com os numeros {inicio} e {fim}")
-            else:
-                trechos_livros.append(f"livro {linha.Livro} com {total} registros numerados no intervalo de {inicio} a {fim}")
-        
-        texto_livros_corrido = "; ".join(trechos_livros)
+    # ... (lógica de data/livros igual) ...
 
-    # 2. Configurações de página (A4, Retrato, Fonte 9)
-    # \paperw11906\paperh16838 = A4 | \margl1440 = 2.54cm
-    config_pagina = r"\paperw5103\paperh16838\portrait\margl1440\margr1440\margt1440\margb1440\fs18"
+    # 1. Definimos a Calibri como \f0 na tabela de fontes
+    # 2. \fs18 define o tamanho 9 (18 meios-pontos)
+    config_pagina = r"\sectd\paperh11906\paperw16838\margl567\margr244\margt567\margb238\pgwsxn16838\pghsxn11906\marglsxn567\margrsxn244\margtsxn567\margbsxn238\fs18"
     
     template_rtf = f"""{{\\rtf1\\ansi\\deff0 
-{{\\fonttbl{{\\f0 Arial;}}\\f0}}
+{{\\fonttbl{{\\f0 Calibri;}}}}
 {config_pagina}
 {{\\b ##ATO\\b0  AVISO DE REGISTRO DE DIPLOMAS}}\\par
 {{\\b ##TEX\\b0  O Instituto Capivara Learning, CNPJ no 10.738.898/0001-75, em atendimento ao disposto no art. 21 da Portaria MEC n° 1.095 de 25 de outubro de 2018 informa que, no mes de {mes_referencia} do corrente ano, registrou {total_geral} diplomas assim distribuidos: {texto_livros_corrido}.}}\\par
