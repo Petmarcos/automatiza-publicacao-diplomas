@@ -92,10 +92,10 @@ def gerar_texto_rtf(df_final, resumo_livros, total_geral):
     # O formato de página do LibreOffice exige tanto o comando geral quanto o da seção (sxn)
     # 9cm = 5103 twips | 29.7cm = 16838 twips
     # Margens: 1cm = 567 | 0.43cm = 244
-    config_pagina = r"\portrait\paperh5103\paperw16838\margl567\margr244\margt567\margb238\sectd\pgwsxn16838\pghsxn5103\marglsxn567\margrsxn244\margtsxn567\margbsxn238"
+    config_pagina = r"\portrait\paperh5103\paperw16838\margl567\margr244\margt567\margb238\sectd\pgwsxn16838\pghsxn5103\marglsxn567\margrsxn244\margtsxn567\margbsxn238\fs18"
     
     template_rtf = f"""{{\\rtf1\\ansi\\deff0 
-{{\\fonttbl{{\\f0 Arial;}}}}
+{{\\fonttbl{{\\f0 Calibri;}}}}
 {config_pagina}
 {{\\b ##ATO\\b0  AVISO DE REGISTRO DE DIPLOMAS}}\\par
 {{\\b ##TEX\\b0  O Instituto Capivara Learning, CNPJ no 10.738.898/0001-75, em atendimento ao disposto no art. 21 da Portaria MEC n° 1.095 de 25 de outubro de 2018 informa que, no mes de {mes_referencia} do corrente ano, registrou {total_geral} diplomas assim distribuidos: {texto_livros_corrido}.}}\\par
