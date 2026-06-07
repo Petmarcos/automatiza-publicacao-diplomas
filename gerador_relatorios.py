@@ -58,9 +58,6 @@ def descobrir_mes_referencia(df_final):
 
 
 def gerar_texto_rtf(df_final, resumo_livros, total_geral):
-    """
-    Monta o texto padrão do DOU preenchendo dinamicamente os dados e intervalos de livros.
-    """
     mes_referencia, ano_referencia = descobrir_mes_referencia(df_final)
     data_assinatura = datetime.now().strftime("%d de %B de %Y")
     
@@ -70,7 +67,6 @@ def gerar_texto_rtf(df_final, resumo_livros, total_geral):
         total = linha.Total_Registros
         inicio = int(linha.Primeiro_Registro) if not pd.isna(linha.Primeiro_Registro) else 0
         fim = int(linha.Ultimo_Registro) if not pd.isna(linha.Ultimo_Registro) else 0
-        
         if total == 1:
             trechos_livros.append(f"livro {livro} com 1 registro numerado com o numero {inicio}")
         elif total == 2:
@@ -79,16 +75,18 @@ def gerar_texto_rtf(df_final, resumo_livros, total_geral):
             trechos_livros.append(f"livro {livro} com {total} registros numerados no intervalo de {inicio} a {fim}")
     
     texto_livros_corrido = "; ".join(trechos_livros)
-
     
+    # \fi567 = 1cm de recuo na primeira linha
+    # \li0 = recuo à esquerda da margem
+    # \sl276 = espaçamento de linha padrão
+    # \sa200 = espaçamento após o parágrafo (cria o espaço entre blocos)
     template_rtf = f"""{{\\rtf1\\ansi\\deff0 
 {{\\fonttbl{{\\f0 Calibri;}}}}
-{config_pagina}
+\\margl567\\margr244\\margt567\\margb238
 \\pard\\qc\\b ##ATO AVISO DE REGISTRO DE DIPLOMAS\\b0\\par
 \\par
-\\pard\\qj\\fi567\\li0 \\b ##TEX\\b0  \\tab O Instituto Capivara Learning, CNPJ no 10.738.898/0001-75, em atendimento ao disposto no art. 21 da Portaria MEC n° 1.095 de 25 de outubro de 2018 informa que, no mes de {mes_referencia} do corrente ano, registrou {total_geral} diplomas assim distribuidos: {texto_livros_corrido}.\\par
-\\par
-\\pard\\qj\\fi567\\li0 \\tab A relacao dos diplomas registrados podera ser consultada em ate trinta dias, no endereco eletronico https://www.icl.edu.br/pre/controle-academico/erd.\\par
+\\pard\\qj\\fi567\\li0\\sa200 \\tab O Instituto Capivara Learning, CNPJ no 10.738.898/0001-75, em atendimento ao disposto no art. 21 da Portaria MEC n° 1.095 de 25 de outubro de 2018 informa que, no mes de {mes_referencia} do corrente ano, registrou {total_geral} diplomas assim distribuidos: {texto_livros_corrido}.\\par
+\\pard\\qj\\fi567\\li0\\sa200 \\tab A relacao dos diplomas registrados podera ser consultada em ate trinta dias, no endereco eletronico https://www.icl.edu.br/pre/controle-academico/erd.\\par
 \\par
 \\pard\\qc\\b ##DAT Joao Pessoa, {data_assinatura}\\b0\\par
 \\par
