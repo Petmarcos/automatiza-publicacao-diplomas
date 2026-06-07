@@ -62,7 +62,7 @@ def gerar_texto_rtf(df_final, resumo_livros, total_geral):
 
     # 1. Definimos a Calibri como \f0 na tabela de fontes
     # 2. \fs18 define o tamanho 9 (18 meios-pontos)
-    config_pagina = r"\sectd\paperh11906\paperw16838\margl567\margr244\margt567\margb238\pgwsxn16838\pghsxn11906\marglsxn567\margrsxn244\margtsxn567\margbsxn238\fs18"
+    config_pagina = r"\landscape\paperh5103\paperw16838\margl567\margr244\margt567\margb238\sectd\pgwsxn16838\pghsxn11906\marglsxn567\margrsxn244\margtsxn567\margbsxn238"
     
     template_rtf = f"""{{\\rtf1\\ansi\\deff0 
 {{\\fonttbl{{\\f0 Calibri;}}}}
