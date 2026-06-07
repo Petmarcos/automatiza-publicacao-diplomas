@@ -2,46 +2,15 @@ import pandas as pd
 from datetime import datetime
 from collections import namedtuple
 
-# 1. Função para calcular o resumo dos livros
-def calcular_resumo_livros(df_final):
-    df_final['Registro da homologação'] = pd.to_numeric(df_final['Registro da homologação'], errors='coerce')
-    resumo = df_final.groupby('Livro').agg(
-        Total_Registros=('Registro da homologação', 'count'),
-        Primeiro_Registro=('Registro da homologação', 'min'),
-        Ultimo_Registro=('Registro da homologação', 'max')
-    ).reset_index()
-    
-    LinhaResumo = namedtuple('LinhaResumo', ['Livro', 'Total_Registros', 'Primeiro_Registro', 'Ultimo_Registro'])
-    return [LinhaResumo(**row) for row in resumo.to_dict(orient='records')]
+# ... (Mantenha as funções calcular_resumo_livros e descobrir_mes_referencia como estão) ...
 
-# 2. Função para descobrir o mês de referência
-def descobrir_mes_referencia(df_final):
-    try:
-        datas = pd.to_datetime(df_final['Homologacao'], errors='coerce')
-        datas_validas = datas.dropna()
-        if not datas_validas.empty:
-            data_referencia = datas_validas.iloc[0]
-            mes_extenso = data_referencia.strftime("%B").lower()
-            ano_corrente = data_referencia.strftime("%Y")
-            return mes_extenso, ano_corrente
-    except Exception:
-        pass
-    hoje = datetime.now()
-    mes_anterior = 12 if hoje.month == 1 else hoje.month - 1
-    ano_anterior = hoje.year - 1 if hoje.month == 1 else hoje.year
-    data_ficticia = datetime(ano_anterior, mes_anterior, 1)
-    return data_ficticia.strftime("%B").lower(), str(ano_anterior)
-
-# 3. Função principal que gera o RTF (agora com os 5 parâmetros)
-def gerar_texto_rtf(df_final, resumo_livros, total_geral, mes_referencia, data_assinatura):
-    # Processa o texto corrido
+# Renomeei para forçar o Python a ler a nova versão
+def gerar_texto_rtf_v2(df_final, resumo_livros, total_geral, mes_referencia, data_assinatura):
     trechos = [f"livro {r.Livro} com {r.Total_Registros} registros numerados no intervalo de {r.Primeiro_Registro} a {r.Ultimo_Registro}" for r in resumo_livros]
     texto_livros_corrido = "; ".join(trechos)
-
-    # Configuração de página (Lógica de largura 9cm para Imprensa Nacional)
+    
     config_pagina = r"\landscape\paperh5103\paperw16838\margl567\margr244\margt567\margb238"
     
-    # Template com recuos (fi567 = 1cm) e alinhamentos
     template_rtf = f"""{{\\rtf1\\ansi\\deff0 
 {{\\fonttbl{{\\f0 Calibri;}}}}
 {config_pagina}
@@ -57,12 +26,12 @@ def gerar_texto_rtf(df_final, resumo_livros, total_geral, mes_referencia, data_a
 }}"""
     return template_rtf
 
-# 4. BLOCO DE EXECUÇÃO (Substitua a chamada antiga por esta estrutura)
+# --- CHAMADA NO FLUXO PRINCIPAL ---
 resumo = calcular_resumo_livros(df_final)
 total = df_final.shape[0]
 mes, ano = descobrir_mes_referencia(df_final)
 mes_ref = f"{mes} de {ano}"
 data_ass = datetime.now().strftime("%d de %B de %Y")
 
-# Chamada completa com os 5 argumentos
-conteudo_rtf = gerar_texto_rtf(df_final, resumo, total, mes_ref, data_ass)
+# Chamando a V2:
+conteudo_rtf = gerar_texto_rtf_v2(df_final, resumo, total, mes_ref, data_ass)
