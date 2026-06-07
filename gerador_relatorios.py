@@ -91,7 +91,7 @@ def gerar_texto_rtf(df_final, resumo_livros, total_geral):
 
     # 2. Configurações de página (A4, Retrato, Fonte 9)
     # \paperw11906\paperh16838 = A4 | \margl1440 = 2.54cm
-    config_pagina = r"\paperw11906\paperh16838\portrait\margl1440\margr1440\margt1440\margb1440\fs18"
+    config_pagina = r"\paperw5103\paperh16838\portrait\margl1440\margr1440\margt1440\margb1440\fs18"
     
     template_rtf = f"""{{\\rtf1\\ansi\\deff0 
 {{\\fonttbl{{\\f0 Arial;}}\\f0}}
