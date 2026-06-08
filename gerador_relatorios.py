@@ -4,12 +4,11 @@ from collections import namedtuple
 
 # Dicionário global para garantir a tradução dos meses
 MESES_PT = {
-    1: "janeiro", 2: "fevereiro", 3: "marco", 4: "abril",
+    1: "janeiro", 2: "fevereiro", 3: "março", 4: "abril",
     5: "maio", 6: "junho", 7: "julho", 8: "agosto",
     9: "setembro", 10: "outubro", 11: "novembro", 12: "dezembro"
 }
 
-# 1. Funções de suporte (mantidas como você gosta)
 def calcular_resumo_livros(df_final):
     df_final['Registro da homologação'] = pd.to_numeric(df_final['Registro da homologação'], errors='coerce')
     resumo = df_final.groupby('Livro').agg(
@@ -26,21 +25,18 @@ def descobrir_mes_referencia(df_final):
         datas_validas = datas.dropna()
         if not datas_validas.empty:
             data_ref = datas_validas.iloc[0]
-            # Pegamos o número do mês e traduzimos pelo dicionário
-            mes_pt = MESES_PT[data_ref.month]
-            return mes_pt, data_ref.strftime("%Y")
+            return MESES_PT[data_ref.month], data_ref.strftime("%Y")
     except: 
         pass
     
     hoje = datetime.now()
     return MESES_PT[hoje.month], str(hoje.year)
 
-# 2. A FUNÇÃO UNIFICADA (Ela calcula tudo internamente para evitar erros de escopo)
+
+# 2. FUNÇÃO ATUALIZADA (Retorna o RTF e a Prévia HTML)
 def gerar_texto_rtf(df_final, resumo_livros, total_geral):
-    # Cálculo interno para garantir que as variáveis existam
-    mes_referencia, ano_referencia = descobrir_mes_referencia(df_final)
+    mes_referencia, _ = descobrir_mes_referencia(df_final)
     
-    # Montagem manual da data de assinatura usando o dicionário em português
     hoje = datetime.now()
     mes_assinatura_pt = MESES_PT[hoje.month]
     data_assinatura = f"{hoje.strftime('%d')} de {mes_assinatura_pt} de {hoje.strftime('%Y')}"
@@ -62,7 +58,9 @@ def gerar_texto_rtf(df_final, resumo_livros, total_geral):
     
     texto_livros_corrido = "; ".join(trechos_livros)
     
-    # Template RTF consolidado
+    # ----------------------------------------------------
+    # 1. GERAÇÃO DO RTF BRUTO (Para o arquivo de download)
+    # ----------------------------------------------------
     template_rtf = f"""{{\\rtf1\\ansi\\deff0 
 {{\\fonttbl{{\\f0 Calibri;}}}}
 {config_pagina}
@@ -70,9 +68,36 @@ def gerar_texto_rtf(df_final, resumo_livros, total_geral):
 \\par
 \\pard\\qj\\fi567\\li0\\sa200  O Instituto Capivara Learning, CNPJ no 10.738.898/0001-75, em atendimento ao disposto no art. 21 da Portaria MEC n° 1.095 de 25 de outubro de 2018 informa que, no mes de {mes_referencia} do corrente ano, registrou {total_geral} diplomas assim distribuidos: {texto_livros_corrido}.\\par
 \\pard\\qj\\fi567\\li0\\sa200  A relacao dos diplomas registrados podera ser consultada em ate trinta dias, no endereco eletronico https://www.icl.edu.br/pre/controle-academico/erd.\\par
+\\par
 \\pard\\qc\\b ##DAT Joao Pessoa, {data_assinatura}\\b0\\par
 \\par
 \\pard\\qc\\b ##ASS Capivara Svenson\\b0\\par
 \\pard\\qc\\b ##CAR Reitora\\b0\\par
 }}"""
-    return template_rtf
+
+    # ----------------------------------------------------
+    # 2. GERAÇÃO DA PRÉVIA HTML (Para renderizar na tela)
+    # ----------------------------------------------------
+    template_previa_html = f"""
+    <div style="font-family: 'Calibri', sans-serif; line-height: 1.6; color: #333; padding: 20px; text-align: justify;">
+        <div style="text-align: center; font-weight: bold; margin-bottom: 20px;">##ATO AVISO DE REGISTRO DE DIPLOMAS</div>
+        
+        <p style="text-indent: 30px; margin-bottom: 15px;">
+            O Instituto Capivara Learning, CNPJ no 10.738.898/0001-75, em atendimento ao disposto no art. 21 da Portaria MEC n° 1.095 de 25 de outubro de 2018 informa que, no mes de <strong>{mes_referencia}</strong> do corrente ano, registrou {total_geral} diplomas assim distribuidos: {texto_livros_corrido}.
+        </p>
+        
+        <p style="text-indent: 30px; margin-bottom: 30px;">
+            A relacao dos diplomas registrados podera ser consultada em ate trinta dias, no endereco eletronico <a href="https://www.icl.edu.br/pre/controle-academico/erd" target="_blank">https://www.icl.edu.br/pre/controle-academico/erd</a>.
+        </p>
+        
+        <div style="text-align: center; font-weight: bold; margin-bottom: 15px;">##DAT Joao Pessoa, {data_assinatura}</div>
+        <div style="text-align: center; font-weight: bold;">##ASS Capivara Svenson</div>
+        <div style="text-align: center; font-weight: bold;">##CAR Reitora</div>
+    </div>
+    """
+
+    # Retorna ambos em um dicionário
+    return {
+        "rtf": template_rtf,
+        "html_previa": template_previa_html
+    }

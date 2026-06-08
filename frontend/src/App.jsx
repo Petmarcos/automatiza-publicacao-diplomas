@@ -55,24 +55,6 @@ export default function App() {
     window.location.href = `${API_URL}/api/download-excel`;
   };
 
-  const limparRTF = (texto) => {
-  if (!texto) return "";
-  
-  return texto
-    // 1. Substitui os marcadores técnicos por rótulos amigáveis ou espaços
-    .replace(/##ASS/g, "Assinatura:")
-    .replace(/##CAR/g, "Cargo:")
-    .replace(/##DAT/g, "Data:")
-    .replace(/##TEX/g, "") // O ##TEX não precisa aparecer, é só o corpo do texto
-    
-    // 2. Remove comandos técnicos do RTF
-    .replace(/\\par/g, "\n")
-    .replace(/\\tab/g, " ")
-    .replace(/\\[a-z0-9]+/g, "")
-    .replace(/[{}]/g, "")
-    .trim();
-};
-
   return (
     <div className="min-h-screen bg-gray-50 p-8 font-sans text-gray-800">
       <header className="mb-8 border-b-4 border-green-600 bg-white p-6 shadow-sm text-center">
@@ -118,23 +100,23 @@ export default function App() {
           <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
             <h3 className="text-xl font-bold mb-4">Processamento Concluído</h3>
  
-            {dadosProcessados.previa_texto_rtf && (
-              <div className="mb-6 p-4 bg-gray-50 border rounded-md max-h-60 overflow-y-auto whitespace-pre-wrap text-sm text-gray-700">
-                <h4 className="font-bold mb-2 underline">Prévia do Conteúdo (RTF):</h4>
-                {limparRTF(dadosProcessados.previa_texto_rtf)}
-
+            {/* PRÉVIA WYSIWYG UTILIZANDO O HTML INTERPRETADO DO BACKEND */}
+            {dadosProcessados.previa_html && (
+              <div className="mb-6 p-4 bg-white border rounded-md max-h-96 overflow-y-auto shadow-inner">
+                <h4 className="font-bold mb-4 text-gray-900 underline">Prévia do Conteúdo:</h4>
+                <div 
+                  dangerouslySetInnerHTML={{ __html: dadosProcessados.previa_html }} 
+                />
               </div>
             )}
 
-            {/* 2. PRÉVIA DA TABELA (AJUSTE CONFORME O NOME DO CAMPO QUE O SEU BACKEND ENVIA) */}
-            {/* Geralmente o campo se chama 'lista_alunos', 'dados' ou 'tabela' */}
+            {/* 2. PRÉVIA DA TABELA */}
             {dadosProcessados.lista_alunos && Array.isArray(dadosProcessados.lista_alunos) && (
               <div className="mb-6 overflow-x-auto">
                 <h4 className="font-bold mb-2 underline">Listagem Processada:</h4>
                 <table className="min-w-full text-sm border-collapse border border-gray-200">
                   <thead className="bg-gray-100">
                     <tr>
-                      {/* Ajuste os nomes das colunas conforme o seu Excel */}
                       <th className="border p-2">Nome</th>
                       <th className="border p-2">CPF</th>
                       <th className="border p-2">e-MEC</th>
@@ -154,8 +136,8 @@ export default function App() {
             )}
 
             <div className="flex gap-4">
-              <button onClick={baixarRTF} className="bg-blue-600 text-white py-2 px-4 rounded">Baixar RTF</button>
-              <button onClick={baixarExcel} className="bg-green-600 text-white py-2 px-4 rounded">Baixar Excel</button>
+              <button onClick={baixarRTF} className="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition">Baixar RTF</button>
+              <button onClick={baixarExcel} className="bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 transition">Baixar Excel</button>
             </div>
           </div>
 
