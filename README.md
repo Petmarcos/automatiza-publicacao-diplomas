@@ -52,7 +52,7 @@ graph TD
     style I fill:#fbb,stroke:#333,stroke-width:2px
     style J fill:#fbb,stroke:#333,stroke-width:2px
 
-``` mermaid
+```
 ---
 
 ## 🚀 Sobre o Projeto: Automatiza-Publicação
