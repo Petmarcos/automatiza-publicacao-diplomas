@@ -26,6 +26,18 @@ def descobrir_mes_referencia(df_final):
 
 # 2. A FUNÇÃO UNIFICADA (Ela calcula tudo internamente para evitar erros de escopo)
 def gerar_texto_rtf(df_final, resumo_livros, total_geral):
+    # Traduzindo o nome dos meses para português
+    traducao_meses = {
+        'january': 'janeiro', 'february': 'fevereiro', 'march': 'marco', 'april': 'abril',
+        'may': 'maio', 'june': 'junho', 'july': 'julho', 'august': 'agosto',
+        'september': 'setembro', 'october': 'outubro', 'november': 'novembro', 'december': 'dezembro'
+
+    # Obtém o mês original (que está vindo em inglês)
+    mes_orig, ano_referencia = descobrir_mes_referencia(df_final)
+    
+    # Força a tradução usando o dicionário acima
+    mes_referencia = traducao_meses.get(mes_orig.lower(), mes_orig)
+    }
     # Cálculo interno para garantir que as variáveis existam
     mes_referencia, ano_referencia = descobrir_mes_referencia(df_final)
     data_assinatura = datetime.now().strftime("%d de %B de %Y")
