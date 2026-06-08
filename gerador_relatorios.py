@@ -4,7 +4,7 @@ from collections import namedtuple
 
 # Dicionário global para garantir a tradução dos meses
 MESES_PT = {
-    1: "janeiro", 2: "fevereiro", 3: "março", 4: "abril",
+    1: "janeiro", 2: "fevereiro", 3: "marco", 4: "abril",
     5: "maio", 6: "junho", 7: "julho", 8: "agosto",
     9: "setembro", 10: "outubro", 11: "novembro", 12: "dezembro"
 }
@@ -70,7 +70,6 @@ def gerar_texto_rtf(df_final, resumo_livros, total_geral):
 \\par
 \\pard\\qj\\fi567\\li0\\sa200  O Instituto Capivara Learning, CNPJ no 10.738.898/0001-75, em atendimento ao disposto no art. 21 da Portaria MEC n° 1.095 de 25 de outubro de 2018 informa que, no mes de {mes_referencia} do corrente ano, registrou {total_geral} diplomas assim distribuidos: {texto_livros_corrido}.\\par
 \\pard\\qj\\fi567\\li0\\sa200  A relacao dos diplomas registrados podera ser consultada em ate trinta dias, no endereco eletronico https://www.icl.edu.br/pre/controle-academico/erd.\\par
-\\par
 \\pard\\qc\\b ##DAT Joao Pessoa, {data_assinatura}\\b0\\par
 \\par
 \\pard\\qc\\b ##ASS Capivara Svenson\\b0\\par
