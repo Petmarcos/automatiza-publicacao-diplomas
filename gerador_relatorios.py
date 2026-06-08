@@ -2,6 +2,13 @@ import pandas as pd
 from datetime import datetime
 from collections import namedtuple
 
+# Dicionário global para garantir a tradução dos meses
+MESES_PT = {
+    1: "janeiro", 2: "fevereiro", 3: "março", 4: "abril",
+    5: "maio", 6: "junho", 7: "julho", 8: "agosto",
+    9: "setembro", 10: "outubro", 11: "novembro", 12: "dezembro"
+}
+
 # 1. Funções de suporte (mantidas como você gosta)
 def calcular_resumo_livros(df_final):
     df_final['Registro da homologação'] = pd.to_numeric(df_final['Registro da homologação'], errors='coerce')
@@ -19,28 +26,25 @@ def descobrir_mes_referencia(df_final):
         datas_validas = datas.dropna()
         if not datas_validas.empty:
             data_ref = datas_validas.iloc[0]
-            return data_ref.strftime("%B").lower(), data_ref.strftime("%Y")
-    except: pass
+            # Pegamos o número do mês e traduzimos pelo dicionário
+            mes_pt = MESES_PT[data_ref.month]
+            return mes_pt, data_ref.strftime("%Y")
+    except: 
+        pass
+    
     hoje = datetime.now()
-    return hoje.strftime("%B").lower(), str(hoje.year)
+    return MESES_PT[hoje.month], str(hoje.year)
 
 # 2. A FUNÇÃO UNIFICADA (Ela calcula tudo internamente para evitar erros de escopo)
 def gerar_texto_rtf(df_final, resumo_livros, total_geral):
-    # Traduzindo o nome dos meses para português
-    traducao_meses = {
-        'january': 'janeiro', 'february': 'fevereiro', 'march': 'marco', 'april': 'abril',
-        'may': 'maio', 'june': 'junho', 'july': 'julho', 'august': 'agosto',
-        'september': 'setembro', 'october': 'outubro', 'november': 'novembro', 'december': 'dezembro'
-
-    # Obtém o mês original (que está vindo em inglês)
-    mes_orig, ano_referencia = descobrir_mes_referencia(df_final)
-    
-    # Força a tradução usando o dicionário acima
-    mes_referencia = traducao_meses.get(mes_orig.lower(), mes_orig)
-    }
     # Cálculo interno para garantir que as variáveis existam
     mes_referencia, ano_referencia = descobrir_mes_referencia(df_final)
-    data_assinatura = datetime.now().strftime("%d de %B de %Y")
+    
+    # Montagem manual da data de assinatura usando o dicionário em português
+    hoje = datetime.now()
+    mes_assinatura_pt = MESES_PT[hoje.month]
+    data_assinatura = f"{hoje.strftime('%d')} de {mes_assinatura_pt} de {hoje.strftime('%Y')}"
+    
     config_pagina = r"\landscape\paperh5103\paperw16838\margl567\margr244\margt567\margb238"
     
     trechos_livros = []
