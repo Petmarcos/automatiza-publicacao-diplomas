@@ -66,12 +66,12 @@ def gerar_texto_rtf(df_final, resumo_livros, total_geral):
 {config_pagina}
 \\pard\\qc\\b ##ATO AVISO DE REGISTRO DE DIPLOMAS\\b0\\par
 \\par
-\\pard\\qj\\fi567\\li0\\sa200  O Instituto Capivara Learning, CNPJ no 10.738.898/0001-75, em atendimento ao disposto no art. 21 da Portaria MEC n° 1.095 de 25 de outubro de 2018 informa que, no mes de {mes_referencia} do corrente ano, registrou {total_geral} diplomas assim distribuidos: {texto_livros_corrido}.\\par
-\\pard\\qj\\fi567\\li0\\sa200  A relacao dos diplomas registrados podera ser consultada em ate trinta dias, no endereco eletronico https://www.icl.edu.br/pre/controle-academico/erd.\\par
+\\pard\\qj\\fi567\\li0\\sa200  O Instituto Federal de Educação, Ciência e Tecnoloiga da Paraiba - IFPB, CNPJ no 10.738.898/0001-75, em atendimento ao disposto no art. 21 da Portaria MEC numero 1.095 de 25 de outubro de 2018 informa que, no mes de {mes_referencia} do corrente ano, registrou {total_geral} diplomas assim distribuidos: {texto_livros_corrido}.\\par
+\\pard\\qj\\fi567\\li0\\sa200  A relacao dos diplomas registrados podera ser consultada em ate trinta dias, no endereco eletronico https://www.ifpb.edu.br/pre/controle-academico/erd.\\par
 \\par
 \\pard\\qc\\b ##DAT Joao Pessoa, {data_assinatura}\\b0\\par
 \\par
-\\pard\\qc\\b ##ASS Capivara Svenson\\b0\\par
+\\pard\\qc\\b ##ASS Mary Roberta Meira Marinho\\b0\\par
 \\pard\\qc\\b ##CAR Reitora\\b0\\par
 }}"""
 
@@ -83,15 +83,15 @@ def gerar_texto_rtf(df_final, resumo_livros, total_geral):
         <div style="text-align: center; font-weight: bold; margin-bottom: 20px;">##ATO AVISO DE REGISTRO DE DIPLOMAS</div>
         
         <p style="text-indent: 30px; margin-bottom: 15px;">
-            O Instituto Capivara Learning, CNPJ no 10.738.898/0001-75, em atendimento ao disposto no art. 21 da Portaria MEC n° 1.095 de 25 de outubro de 2018 informa que, no mes de <strong>{mes_referencia}</strong> do corrente ano, registrou {total_geral} diplomas assim distribuidos: {texto_livros_corrido}.
+            O Instituto Federal de Educação, Ciência e Tecnoloiga da Paraiba - IFPB, CNPJ no 10.738.898/0001-75, em atendimento ao disposto no art. 21 da Portaria MEC nuemro 1.095 de 25 de outubro de 2018 informa que, no mes de <strong>{mes_referencia}</strong> do corrente ano, registrou {total_geral} diplomas assim distribuidos: {texto_livros_corrido}.
         </p>
         
         <p style="text-indent: 30px; margin-bottom: 30px;">
-            A relacao dos diplomas registrados podera ser consultada em ate trinta dias, no endereco eletronico <a href="https://www.icl.edu.br/pre/controle-academico/erd" target="_blank">https://www.icl.edu.br/pre/controle-academico/erd</a>.
+            A relacao dos diplomas registrados podera ser consultada em ate trinta dias, no endereco eletronico <a href="https://www.ifpb.edu.br/pre/controle-academico/erd" target="_blank">https://www.icl.edu.br/pre/controle-academico/erd</a>.
         </p>
         
         <div style="text-align: center; font-weight: bold; margin-bottom: 15px;">##DAT Joao Pessoa, {data_assinatura}</div>
-        <div style="text-align: center; font-weight: bold;">##ASS Capivara Svenson</div>
+        <div style="text-align: center; font-weight: bold;">##ASS Mary Roberta Meira Marinho</div>
         <div style="text-align: center; font-weight: bold;">##CAR Reitora</div>
     </div>
     """
