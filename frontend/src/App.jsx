@@ -58,7 +58,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-gray-50 p-8 font-sans text-gray-800">
       <header className="mb-8 border-b-4 border-green-600 bg-white p-6 shadow-sm text-center">
-        <h1 className="text-2xl font-bold text-gray-900 tracking-wide uppercase">Instituto Capivara Learning</h1>
+        <h1 className="text-2xl font-bold text-gray-900 tracking-wide uppercase">Instituto Federal de Educação, Ciência e Tecnologia da Paraíba - IFPB</h1>
         <p className="text-sm text-gray-500 font-medium">Diretoria de Cadastro Acadêmico, Certificação e Diplomação</p>
       </header>
 
