@@ -60,7 +60,6 @@ export default function App() {
       <header className="mb-8 border-b-4 border-green-600 bg-white p-6 shadow-sm text-center">
         <h1 className="text-2xl font-bold text-gray-900 tracking-wide uppercase">Instituto Federal de Educação, Ciência e Tecnologia da Paraíba - IFPB</h1>
         <p className="text-sm text-gray-500 font-medium">Diretoria de Cadastro Acadêmico, Certificação e Diplomação</p>
-        <p className="text-sm text-gray-500 font-medium">Melhoria de processo para uso interno da DCACD-PRE/IFPB em conformidade com a Portaria MEC nº 1.095 de 25 de outubro de 2018</p>
       </header>
 
       {!dadosProcessados ? (
