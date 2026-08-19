@@ -6,6 +6,8 @@ const API_URL = import.meta.env.VITE_API_URL || "https://automatiza-publicacao-a
 export default function App() {
   const [fileDigitais, setFileDigitais] = useState(null);
   const [fileEmitidos, setFileEmitidos] = useState(null);
+  const [nomeReitor, setNomeReitor] = useState("Mary Roberta Meira Marinho");
+  const [cargoReitor, setCargoReitor] = useState("Reitora");
   const [carregando, setCarregando] = useState(false);
   const [dadosProcessados, setDadosProcessados] = useState(null);
 
@@ -19,6 +21,8 @@ export default function App() {
     const formData = new FormData();
     formData.append("file_digitais", fileDigitais);
     formData.append("file_emitidos", fileEmitidos);
+    formData.append("nome_reitor", nomeReitor);
+    formData.append("cargo_reitor", cargoReitor);
 
     try {
       const response = await fetch(`${API_URL}/api/processar-diplomas`, {
@@ -66,8 +70,34 @@ export default function App() {
       {!dadosProcessados ? (
         // TELA DE UPLOAD
         <main className="max-w-2xl mx-auto bg-white p-8 rounded-xl shadow-md border border-gray-100">
-          <h2 className="text-lg font-semibold mb-6 text-gray-700">Upload das Planilhas de Origem</h2>
+          <h2 className="text-lg font-semibold mb-6 text-gray-700">Upload das Planilhas de Origem e Configurações</h2>
+          
           <div className="space-y-6">
+            {/* CONFIGURAÇÃO DO REITOR */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
+              <div>
+                <label className="block text-xs font-semibold uppercase text-gray-600 mb-1">Nome do(a) Reitor(a)</label>
+                <input
+                  type="text"
+                  value={nomeReitor}
+                  onChange={(e) => setNomeReitor(e.target.value)}
+                  className="w-full text-sm border rounded-md p-2 bg-white text-gray-800 border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold uppercase text-gray-600 mb-1">Cargo do Signatário</label>
+                <input
+                  type="text"
+                  value={cargoReitor}
+                  onChange={(e) => setCargoReitor(e.target.value)}
+                  className="w-full text-sm border rounded-md p-2 bg-white text-gray-800 border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* SELEÇÃO DE ARQUIVOS */}
             <div>
               <label className="block text-sm font-semibold text-gray-600 mb-2">1. Diplomas Digitais (digitais.xls)</label>
               <input
@@ -86,6 +116,7 @@ export default function App() {
                 className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 cursor-pointer border rounded-md p-2"
               />
             </div>
+            
             <button
               onClick={handleProcessar}
               disabled={carregando}
@@ -99,46 +130,106 @@ export default function App() {
         // TELA DE RESULTADOS
         <main className="max-w-6xl mx-auto space-y-8">
           <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-            <h3 className="text-xl font-bold mb-4">Processamento Concluído</h3>
- 
-            {/* PRÉVIA WYSIWYG UTILIZANDO O HTML INTERPRETADO DO BACKEND */}
+            <h3 className="text-xl font-bold mb-6 text-gray-800 border-b pb-2">Processamento Concluído</h3>
+
+            {/* 1. CAIXA DE ALERTAS (Exercício Anterior) */}
+            {dadosProcessados.alertas && dadosProcessados.alertas.length > 0 && (
+              <div className="mb-6 p-4 bg-amber-50 border-l-4 border-amber-500 rounded-r-md text-amber-900">
+                <h4 className="font-bold mb-2 text-amber-900 flex items-center gap-2">
+                  <span>⚠️</span> Alertas de Consistência ({dadosProcessados.alertas.length})
+                </h4>
+                <ul className="list-disc list-inside text-sm space-y-1">
+                  {dadosProcessados.alertas.map((alerta, index) => (
+                    <li key={index} className="font-medium">
+                      {alerta.mensagem}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* 2. TABELA RESUMO POR LIVRO */}
+            {dadosProcessados.resumo_livros && (
+              <div className="mb-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <h4 className="font-bold text-gray-800 mb-3 text-sm uppercase tracking-wider">Resumo do Lote Processado</h4>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm border-collapse bg-white rounded-md overflow-hidden shadow-sm">
+                    <thead>
+                      <tr className="bg-gray-200 text-gray-700 text-left">
+                        <th className="p-3 border-b">Livro</th>
+                        <th className="p-3 border-b text-center">Quantidade de Registros</th>
+                        <th className="p-3 border-b text-right">Intervalo</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {dadosProcessados.resumo_livros.map((item, index) => (
+                        <tr key={index} className="hover:bg-gray-50">
+                          <td className="p-3 font-semibold text-gray-800">{item.livro}</td>
+                          <td className="p-3 text-center">{item.quantidade}</td>
+                          <td className="p-3 text-right text-gray-600 font-mono">{item.intervalo}</td>
+                        </tr>
+                      ))}
+                      <tr className="bg-gray-100 font-bold text-gray-900 border-t-2 border-gray-300">
+                        <td className="p-3">Total</td>
+                        <td className="p-3 text-center">{dadosProcessados.total_geral}</td>
+                        <td className="p-3 text-right">-</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* 3. PRÉVIA WYSIWYG DO AVISO */}
             {dadosProcessados.previa_html && (
               <div className="mb-6 p-4 bg-white border rounded-md max-h-96 overflow-y-auto shadow-inner">
-                <h4 className="font-bold mb-4 text-gray-900 underline">Prévia do Conteúdo:</h4>
+                <h4 className="font-bold mb-4 text-gray-900 underline">Prévia do Documento Oficial:</h4>
                 <div 
                   dangerouslySetInnerHTML={{ __html: dadosProcessados.previa_html }} 
                 />
               </div>
             )}
 
-            {/* 2. PRÉVIA DA TABELA */}
-            {dadosProcessados.lista_alunos && Array.isArray(dadosProcessados.lista_alunos) && (
+            {/* 4. PRÉVIA DA TABELA DE ALUNOS */}
+            {dadosProcessados.previa_tabela && Array.isArray(dadosProcessados.previa_tabela) && (
               <div className="mb-6 overflow-x-auto">
-                <h4 className="font-bold mb-2 underline">Listagem Processada:</h4>
-                <table className="min-w-full text-sm border-collapse border border-gray-200">
-                  <thead className="bg-gray-100">
-                    <tr>
-                      <th className="border p-2">Nome</th>
-                      <th className="border p-2">CPF</th>
-                      <th className="border p-2">e-MEC</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {dadosProcessados.lista_alunos.map((aluno, index) => (
-                      <tr key={index} className="hover:bg-gray-50">
-                        <td className="border p-2">{aluno.nome}</td>
-                        <td className="border p-2">{aluno.cpf}</td>
-                        <td className="border p-2">{aluno.e-MEC}</td>
+                <h4 className="font-bold mb-2 underline text-gray-900">Listagem Completa Processada ({dadosProcessados.previa_tabela.length} alunos):</h4>
+                <div className="max-h-64 overflow-y-auto border rounded-md">
+                  <table className="min-w-full text-sm border-collapse border border-gray-200">
+                    <thead className="bg-gray-100 sticky top-0">
+                      <tr>
+                        <th className="border p-2 text-left">Aluno</th>
+                        <th className="border p-2 text-left">CPF</th>
+                        <th className="border p-2 text-left">e-MEC</th>
+                        <th className="border p-2 text-left">Curso</th>
+                        <th className="border p-2 text-left">Livro</th>
+                        <th className="border p-2 text-left">Registro</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {dadosProcessados.previa_tabela.map((aluno, index) => (
+                        <tr key={index} className="hover:bg-gray-50">
+                          <td className="border p-2 font-medium">{aluno.Aluno}</td>
+                          <td className="border p-2 font-mono">{aluno.CPF}</td>
+                          <td className="border p-2">{aluno['e-MEC']}</td>
+                          <td className="border p-2">{aluno.Curso}</td>
+                          <td className="border p-2">{aluno.Livro}</td>
+                          <td className="border p-2">{aluno['Registro da homologação']}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
 
-            <div className="flex gap-4">
-              <button onClick={baixarRTF} className="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition">Baixar RTF</button>
-              <button onClick={baixarExcel} className="bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 transition">Baixar Excel</button>
+            <div className="flex gap-4 pt-4 border-t">
+              <button onClick={baixarRTF} className="bg-blue-600 text-white py-2.5 px-5 rounded-md font-semibold hover:bg-blue-700 transition shadow-sm">
+                Baixar RTF
+              </button>
+              <button onClick={baixarExcel} className="bg-green-600 text-white py-2.5 px-5 rounded-md font-semibold hover:bg-green-700 transition shadow-sm">
+                Baixar Excel
+              </button>
             </div>
           </div>
 
