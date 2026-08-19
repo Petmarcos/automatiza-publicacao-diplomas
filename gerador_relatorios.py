@@ -2,7 +2,6 @@ import pandas as pd
 from datetime import datetime
 from collections import namedtuple
 
-# Dicionário global para garantir a tradução dos meses
 MESES_PT = {
     1: "janeiro", 2: "fevereiro", 3: "março", 4: "abril",
     5: "maio", 6: "junho", 7: "julho", 8: "agosto",
@@ -10,12 +9,15 @@ MESES_PT = {
 }
 
 def calcular_resumo_livros(df_final):
-    df_final['Registro da homologação'] = pd.to_numeric(df_final['Registro da homologação'], errors='coerce')
-    resumo = df_final.groupby('Livro').agg(
+    df_temp = df_final.copy()
+    df_temp['Registro da homologação'] = pd.to_numeric(df_temp['Registro da homologação'], errors='coerce')
+    
+    resumo = df_temp.groupby('Livro').agg(
         Total_Registros=('Registro da homologação', 'count'),
         Primeiro_Registro=('Registro da homologação', 'min'),
         Ultimo_Registro=('Registro da homologação', 'max')
     ).reset_index()
+    
     LinhaResumo = namedtuple('LinhaResumo', ['Livro', 'Total_Registros', 'Primeiro_Registro', 'Ultimo_Registro'])
     return [LinhaResumo(**row) for row in resumo.to_dict(orient='records')]
 
@@ -32,9 +34,7 @@ def descobrir_mes_referencia(df_final):
     hoje = datetime.now()
     return MESES_PT[hoje.month], str(hoje.year)
 
-
-# 2. FUNÇÃO ATUALIZADA (Retorna o RTF e a Prévia HTML)
-def gerar_texto_rtf(df_final, resumo_livros, total_geral):
+def gerar_texto_rtf(df_final, resumo_livros, total_geral, nome_reitor="Mary Roberta Meira Marinho", cargo_reitor="Reitora"):
     mes_referencia, _ = descobrir_mes_referencia(df_final)
     
     hoje = datetime.now()
@@ -58,9 +58,6 @@ def gerar_texto_rtf(df_final, resumo_livros, total_geral):
     
     texto_livros_corrido = "; ".join(trechos_livros)
     
-    # ----------------------------------------------------
-    # 1. GERAÇÃO DO RTF BRUTO (Para o arquivo de download)
-    # ----------------------------------------------------
     template_rtf = f"""{{\\rtf1\\ansi\\deff0 
 {{\\fonttbl{{\\f0 Calibri;}}}}
 {config_pagina}
@@ -71,32 +68,28 @@ def gerar_texto_rtf(df_final, resumo_livros, total_geral):
 \\par
 \\pard\\qc\\b ##DAT Joao Pessoa, {data_assinatura}\\b0\\par
 \\par
-\\pard\\qc\\b ##ASS Mary Roberta Meira Marinho\\b0\\par
-\\pard\\qc\\b ##CAR Reitora\\b0\\par
+\\pard\\qc\\b ##ASS {nome_reitor}\\b0\\par
+\\pard\\qc\\b ##CAR {cargo_reitor}\\b0\\par
 }}"""
 
-    # ----------------------------------------------------
-    # 2. GERAÇÃO DA PRÉVIA HTML (Para renderizar na tela)
-    # ----------------------------------------------------
     template_previa_html = f"""
     <div style="font-family: 'Calibri', sans-serif; line-height: 1.6; color: #333; padding: 20px; text-align: justify;">
         <div style="text-align: center; font-weight: bold; margin-bottom: 20px;">##ATO AVISO DE REGISTRO DE DIPLOMAS</div>
         
         <p style="text-indent: 30px; margin-bottom: 15px;">
-            O Instituto Federal de Educação, Ciência e Tecnoloiga da Paraiba - IFPB, CNPJ no 10.738.898/0001-75, em atendimento ao disposto no art. 21 da Portaria MEC nuemro 1.095 de 25 de outubro de 2018 informa que, no mes de <strong>{mes_referencia}</strong> do corrente ano, registrou {total_geral} diplomas assim distribuidos: {texto_livros_corrido}.
+            O Instituto Federal de Educacao, Ciencia e Tecnologia da Paraiba - IFPB, CNPJ no 10.738.898/0001-75, em atendimento ao disposto no art. 21 da Portaria MEC numero 1.095 de 25 de outubro de 2018 informa que, no mes de <strong>{mes_referencia}</strong> do corrente ano, registrou {total_geral} diplomas assim distribuidos: {texto_livros_corrido}.
         </p>
         
         <p style="text-indent: 30px; margin-bottom: 30px;">
-            A relacao dos diplomas registrados podera ser consultada em ate trinta dias, no endereco eletronico <a href="https://www.ifpb.edu.br/pre/controle-academico/erd" target="_blank">https://www.icl.edu.br/pre/controle-academico/erd</a>.
+            A relacao dos diplomas registrados podera ser consultada em ate trinta dias, no endereco eletronico <a href="https://www.ifpb.edu.br/pre/controle-academico/erd" target="_blank">https://www.ifpb.edu.br/pre/controle-academico/erd</a>.
         </p>
         
         <div style="text-align: center; font-weight: bold; margin-bottom: 15px;">##DAT Joao Pessoa, {data_assinatura}</div>
-        <div style="text-align: center; font-weight: bold;">##ASS Mary Roberta Meira Marinho</div>
-        <div style="text-align: center; font-weight: bold;">##CAR Reitora</div>
+        <div style="text-align: center; font-weight: bold;">##ASS {nome_reitor}</div>
+        <div style="text-align: center; font-weight: bold;">##CAR {cargo_reitor}</div>
     </div>
     """
 
-    # Retorna ambos em um dicionário
     return {
         "rtf": template_rtf,
         "html_previa": template_previa_html

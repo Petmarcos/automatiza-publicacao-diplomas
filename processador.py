@@ -10,8 +10,8 @@ def normalizar_nome_coluna(coluna):
     return coluna.lower()
 
 def limpar_e_mascarar_cpf(cpf_sujo):
-    if pd.isna(cpf_sujo):
-        return ""
+    if pd.isna(cpf_sujo) or str(cpf_sujo).strip() in ['', '-', 'nan', 'NaN', 'None']:
+        return "-"
     numeros = re.sub(r'\D', '', str(cpf_sujo))
     if len(numeros) == 11:
         return f"***.{numeros[3:6]}.{numeros[6:9]}-**"
@@ -51,30 +51,52 @@ def processar_diplomas(caminho_digitais, caminho_emitidos):
     # Proteção para o merge não gerar linhas duplicadas
     df_emitidos = df_emitidos.drop_duplicates(subset=['matricula'])
     
-    # 1. Localiza a Data de Homologação na Planilha de Digitais
+    # Mapeamento e busca dinâmica de colunas
     col_homolog_real = encontrar_coluna_por_multiplas_palavras(df_digitais.columns, ['homol', 'data da homologacao'], 'homologacao')
+    col_aluno_digitais = encontrar_coluna_por_multiplas_palavras(df_digitais.columns, ['aluno', 'nome'], 'aluno')
+    col_cpf_digitais = encontrar_coluna_por_multiplas_palavras(df_digitais.columns, ['cpf'], 'cpf')
     
-    # 2. Localiza as informações chaves na Planilha de Emitidos (Incluindo obrigatoriamente o CPF)
     col_emec_real = encontrar_coluna_por_multiplas_palavras(df_emitidos.columns, ['mec', 'emec'], 'e-mec')
     col_ingresso_real = encontrar_coluna_por_multiplas_palavras(df_emitidos.columns, ['ingr', 'ingresso'], 'ingresso')
     col_conclusao_real = encontrar_coluna_por_multiplas_palavras(df_emitidos.columns, ['concl', 'conclusao'], 'conclusao')
     col_folha_real = encontrar_coluna_por_multiplas_palavras(df_emitidos.columns, ['folh', 'folha'], 'folha')
     col_cpf_emitidos = encontrar_coluna_por_multiplas_palavras(df_emitidos.columns, ['cpf'], 'cpf')
     
-    # 🔥 Força a inclusão do CPF vindo da tabela de emitidos no merge
+    # Força a inclusão das colunas de emitidos no merge
     colunas_para_trazer = ['matricula', col_emec_real, col_ingresso_real, col_conclusao_real, col_folha_real, col_cpf_emitidos]
     colunas_para_trazer = list(set(colunas_para_trazer))
     
-    # Faz o merge/PROCV unificando as informações das duas tabelas
-    df_mesclado = pd.merge(df_digitais, df_emitidos[colunas_para_trazer], on='matricula', how='left')
+    # Faz o merge mantendo todas as matrículas de digitais
+    df_mesclado = pd.merge(df_digitais, df_emitidos[colunas_para_trazer], on='matricula', how='left', suffixes=('', '_emitidos'))
     
-    # Localiza de forma dinâmica o campo do Livro (geralmente presente na de digitais)
+    # Identifica registros sem correspondência em emitidos_2026.xls
+    alertas = []
+    # Um registro sem correspondência em emitidos terá o campo 'e-MEC' (ou outro exclusivo de emitidos) como NaN
+    linhas_sem_emitidos = df_mesclado[df_mesclado[col_emec_real].isna()]
+    
+    for _, linha in linhas_sem_emitidos.iterrows():
+        nome_aluno = str(linha.get(col_aluno_digitais, 'ALUNO DESCONHECIDO')).upper().strip()
+        # Tenta obter CPF de emitidos; se não existir, tenta obter de digitais
+        raw_cpf = linha.get(col_cpf_emitidos) if pd.notna(linha.get(col_cpf_emitidos)) else linha.get(col_cpf_digitais)
+        cpf_formatado = limpar_e_mascarar_cpf(raw_cpf)
+        
+        alertas.append({
+            "aluno": nome_aluno,
+            "cpf": cpf_formatado,
+            "mensagem": f"{nome_aluno} - CPF: {cpf_formatado}: Diploma emitido em exercício anterior - Favor verificar"
+        })
+
+    # Consolida a coluna do CPF priorizando emitidos e caindo para digitais se necessário
+    if col_cpf_emitidos in df_mesclado.columns:
+        df_mesclado['CPF_FINAL'] = df_mesclado[col_cpf_emitidos].fillna(df_mesclado.get(col_cpf_digitais, '-'))
+    else:
+        df_mesclado['CPF_FINAL'] = df_mesclado.get(col_cpf_digitais, '-')
+
     coluna_livro_real = encontrar_coluna_por_multiplas_palavras(df_mesclado.columns, ['livro'], 'livro')
     
-    # Mapeamento para os nomes formais exigidos no layout da tela e Excel
     mapeamento_exibicao = {
-        'aluno': 'Aluno',
-        col_cpf_emitidos: 'CPF', # Mapeia o CPF vindo da planilha de emitidos
+        col_aluno_digitais: 'Aluno',
+        'CPF_FINAL': 'CPF',
         col_emec_real: 'e-MEC',
         'curso': 'Curso',
         col_ingresso_real: 'Ingresso',
@@ -84,9 +106,10 @@ def processar_diplomas(caminho_digitais, caminho_emitidos):
         coluna_livro_real: 'Livro',
         'registro da homologacao': 'Registro da homologação'
     }
+    
     df_mesclado = df_mesclado.rename(columns=mapeamento_exibicao)
     
-    # Higieniza valores nulos ou strings inválidas remanescentes
+    # Higieniza valores nulos
     for col in [
         'Aluno', 'CPF', 'e-MEC', 'Curso', 'Ingresso', 
         'Conclusao', 'Homologacao', 'Folha', 'Livro', 'Registro da homologação'
@@ -97,23 +120,17 @@ def processar_diplomas(caminho_digitais, caminho_emitidos):
             df_mesclado[col] = df_mesclado[col].fillna("-")
             df_mesclado[col] = df_mesclado[col].replace(['nan', 'NaN', 'None', ''], '-')
             
-    # Formatação visual padronizada (Caixa Alta e Máscaras)
     df_mesclado['Aluno'] = df_mesclado['Aluno'].astype(str).str.upper().str.strip()
     df_mesclado['Curso'] = df_mesclado['Curso'].astype(str).str.upper().str.strip()
     df_mesclado['CPF'] = df_mesclado['CPF'].apply(limpar_e_mascarar_cpf)
-    
-    # Garante a remoção de espaços em branco
     df_mesclado['Homologacao'] = df_mesclado['Homologacao'].astype(str).str.strip()
     df_mesclado['Folha'] = df_mesclado['Folha'].astype(str).str.strip()
     
-    # Reordena as colunas rigidamente no layout normativo solicitado
     sequencia_oficial = [
         'Aluno', 'CPF', 'e-MEC', 'Curso', 'Ingresso', 
         'Conclusao', 'Homologacao', 'Folha', 'Livro', 'Registro da homologação'
     ]
     df_final = df_mesclado[sequencia_oficial].copy()
-    
-    # Ordenação alfabética pelo nome do Diplomado (A-Z)
     df_final = df_final.sort_values(by='Aluno', ascending=True)
     
-    return df_final
+    return df_final, alertas
