@@ -37,7 +37,7 @@ def processar_diplomas(caminho_digitais, caminho_emitidos):
     df_digitais = pd.read_excel(caminho_digitais, dtype=str)
     df_emitidos = pd.read_excel(caminho_emitidos, dtype=str)
     
-    # Padroniza os cabeçalhos das colunas (letras minúsculas e sem acento)
+    # Padroniza os cabeçalhos das colunas
     df_digitais.columns = [normalizar_nome_coluna(col) for col in df_digitais.columns]
     df_emitidos.columns = [normalizar_nome_coluna(col) for col in df_emitidos.columns]
     
@@ -48,7 +48,7 @@ def processar_diplomas(caminho_digitais, caminho_emitidos):
     df_digitais = df_digitais[df_digitais['matricula'] != ""]
     df_emitidos = df_emitidos[df_emitidos['matricula'] != ""]
     
-    # Proteção para o merge não gerar linhas duplicadas
+    # Proteção para o merge
     df_emitidos = df_emitidos.drop_duplicates(subset=['matricula'])
     
     # Mapeamento e busca dinâmica de colunas
@@ -62,21 +62,17 @@ def processar_diplomas(caminho_digitais, caminho_emitidos):
     col_folha_real = encontrar_coluna_por_multiplas_palavras(df_emitidos.columns, ['folh', 'folha'], 'folha')
     col_cpf_emitidos = encontrar_coluna_por_multiplas_palavras(df_emitidos.columns, ['cpf'], 'cpf')
     
-    # Força a inclusão das colunas de emitidos no merge
     colunas_para_trazer = ['matricula', col_emec_real, col_ingresso_real, col_conclusao_real, col_folha_real, col_cpf_emitidos]
     colunas_para_trazer = list(set(colunas_para_trazer))
     
-    # Faz o merge mantendo todas as matrículas de digitais
     df_mesclado = pd.merge(df_digitais, df_emitidos[colunas_para_trazer], on='matricula', how='left', suffixes=('', '_emitidos'))
     
-    # Identifica registros sem correspondência em emitidos_2026.xls
+    # Alertas para registros de exercício anterior
     alertas = []
-    # Um registro sem correspondência em emitidos terá o campo 'e-MEC' (ou outro exclusivo de emitidos) como NaN
     linhas_sem_emitidos = df_mesclado[df_mesclado[col_emec_real].isna()]
     
     for _, linha in linhas_sem_emitidos.iterrows():
         nome_aluno = str(linha.get(col_aluno_digitais, 'ALUNO DESCONHECIDO')).upper().strip()
-        # Tenta obter CPF de emitidos; se não existir, tenta obter de digitais
         raw_cpf = linha.get(col_cpf_emitidos) if pd.notna(linha.get(col_cpf_emitidos)) else linha.get(col_cpf_digitais)
         cpf_formatado = limpar_e_mascarar_cpf(raw_cpf)
         
@@ -86,7 +82,7 @@ def processar_diplomas(caminho_digitais, caminho_emitidos):
             "mensagem": f"{nome_aluno} - CPF: {cpf_formatado}: Diploma emitido em exercício anterior - Favor verificar"
         })
 
-    # Consolida a coluna do CPF priorizando emitidos e caindo para digitais se necessário
+    # Consolida CPF
     if col_cpf_emitidos in df_mesclado.columns:
         df_mesclado['CPF_FINAL'] = df_mesclado[col_cpf_emitidos].fillna(df_mesclado.get(col_cpf_digitais, '-'))
     else:
@@ -109,7 +105,7 @@ def processar_diplomas(caminho_digitais, caminho_emitidos):
     
     df_mesclado = df_mesclado.rename(columns=mapeamento_exibicao)
     
-    # Higieniza valores nulos
+    # Higienização
     for col in [
         'Aluno', 'CPF', 'e-MEC', 'Curso', 'Ingresso', 
         'Conclusao', 'Homologacao', 'Folha', 'Livro', 'Registro da homologação'
@@ -126,11 +122,15 @@ def processar_diplomas(caminho_digitais, caminho_emitidos):
     df_mesclado['Homologacao'] = df_mesclado['Homologacao'].astype(str).str.strip()
     df_mesclado['Folha'] = df_mesclado['Folha'].astype(str).str.strip()
     
+    # ORDENAÇÃO SEM CONSIDERAR ACENTUAÇÃO (ÁLADSON entra junto do A)
+    df_mesclado['aluno_chave_sort'] = df_mesclado['Aluno'].apply(remover_acentos)
+    df_mesclado = df_mesclado.sort_values(by='aluno_chave_sort', ascending=True)
+    df_mesclado = df_mesclado.drop(columns=['aluno_chave_sort'])
+    
     sequencia_oficial = [
         'Aluno', 'CPF', 'e-MEC', 'Curso', 'Ingresso', 
         'Conclusao', 'Homologacao', 'Folha', 'Livro', 'Registro da homologação'
     ]
     df_final = df_mesclado[sequencia_oficial].copy()
-    df_final = df_final.sort_values(by='Aluno', ascending=True)
     
     return df_final, alertas
