@@ -9,6 +9,11 @@ def normalizar_nome_coluna(coluna):
     coluna = "".join(c for c in unicodedata.normalize('NFD', coluna) if unicodedata.category(c) != 'Mn')
     return coluna.lower()
 
+def remover_acentos(texto):
+    if not isinstance(texto, str):
+        return str(texto)
+    return "".join(c for c in unicodedata.normalize('NFD', texto) if unicodedata.category(c) != 'Mn')
+
 def limpar_e_mascarar_cpf(cpf_sujo):
     if pd.isna(cpf_sujo) or str(cpf_sujo).strip() in ['', '-', 'nan', 'NaN', 'None']:
         return "-"
