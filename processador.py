@@ -127,7 +127,7 @@ def processar_diplomas(caminho_digitais, caminho_emitidos):
     df_mesclado['Homologacao'] = df_mesclado['Homologacao'].astype(str).str.strip()
     df_mesclado['Folha'] = df_mesclado['Folha'].astype(str).str.strip()
     
-    # ORDENAÇÃO SEM CONSIDERAR ACENTUAÇÃO (ÁLADSON entra junto do A)
+    # ORDENAÇÃO SEM CONSIDERAR ACENTUAÇÃO
     df_mesclado['aluno_chave_sort'] = df_mesclado['Aluno'].apply(remover_acentos)
     df_mesclado = df_mesclado.sort_values(by='aluno_chave_sort', ascending=True)
     df_mesclado = df_mesclado.drop(columns=['aluno_chave_sort'])
