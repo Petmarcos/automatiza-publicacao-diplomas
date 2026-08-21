@@ -8,29 +8,46 @@ MESES_PT = {
     9: "setembro", 10: "outubro", 11: "novembro", 12: "dezembro"
 }
 
+def encontrar_coluna_homologacao(df):
+    """Localiza a coluna de homologação independentemente de acentos ou maiúsculas."""
+    coli_map = {str(col).strip().lower(): col for col in df.columns}
+    opcoes = ['data da homologação', 'data da homologacao', 'homologacao', 'data homologacao']
+    
+    for op in opcoes:
+        if op in coli_map:
+            return coli_map[op]
+    return None
+
 def extrair_mes_dominante(df):
-    """Extrai o mês predominante a partir da coluna de Homologação."""
-    if 'Homologacao' in df.columns:
-        datas = pd.to_datetime(df['Homologacao'], errors='coerce', dayfirst=True)
+    """Extrai o mês mais frequente interpretando o formato brasileiro DD/MM/AAAA."""
+    col_homolog = encontrar_coluna_homologacao(df)
+    
+    if col_homolog:
+        datas = pd.to_datetime(df[col_homolog], dayfirst=True, errors='coerce')
         datas_validas = datas.dropna()
+        
         if not datas_validas.empty:
             mes_num = int(datas_validas.dt.month.mode()[0])
-            return MESES_PT.get(mes_num, "julho")
-    
-    # Fallback para o mês corrente
+            return MESES_PT.get(mes_num, "agosto")
+            
+    # Fallback: mês atual da execução
     mes_atual = datetime.now().month
-    return MESES_PT.get(mes_atual, "julho")
+    return MESES_PT.get(mes_atual, "agosto")
 
 def extrair_ano_dominante(df):
-    """Extrai o ano predominante a partir da coluna de Homologação."""
-    if 'Homologacao' in df.columns:
-        datas = pd.to_datetime(df['Homologacao'], errors='coerce', dayfirst=True)
+    """Extrai o ano mais frequente a partir da coluna de Homologação."""
+    col_homolog = encontrar_coluna_homologacao(df)
+    
+    if col_homolog:
+        datas = pd.to_datetime(df[col_homolog], dayfirst=True, errors='coerce')
         datas_validas = datas.dropna()
         if not datas_validas.empty:
             return int(datas_validas.dt.year.mode()[0])
+            
     return datetime.now().year
 
 def extrair_numero_inteiro(val):
+    """Extrai números inteiros de campos compostos de texto/número."""
     if pd.isna(val):
         return None
     nums = re.findall(r'\d+', str(val))
@@ -75,10 +92,18 @@ def gerar_texto_resumo_livros(df):
     else:
         return ", ".join(resumo_partes[:-1]) + f"; e {resumo_partes[-1]}"
 
-def gerar_dados_relatorio(df, nome_reitor="Mary Roberta Meira Marinho", cargo_reitor="Reitora"):
+def gerar_dados_relatorio(df, nome_reitor="Mary Roberta Meira Marinho", cargo_reitor="Reitora", mes_referencia=None):
     total_diplomas = len(df)
-    mes_nome = extrair_mes_dominante(df)
+    
+    # Define o mês: se veio da requisição usa ele; senão, calcula via dataframe/sistema
+    mes_nome = mes_referencia if mes_referencia else extrair_mes_dominante(df)
     ano_num = extrair_ano_dominante(df)
+    
+    # Data de emissão completa (ex: 21 de agosto de 2026)
+    dia_atual = datetime.now().day
+    mes_atual_nome = MESES_PT.get(datetime.now().month, "agosto")
+    data_emissao_texto = f"{dia_atual} de {mes_atual_nome} de {ano_num}"
+
     resumo_livros_texto = gerar_texto_resumo_livros(df)
 
     # 1. Tabela Resumo para a Interface
@@ -99,31 +124,35 @@ def gerar_dados_relatorio(df, nome_reitor="Mary Roberta Meira Marinho", cargo_re
                 "intervalo": intervalo_str
             })
 
-    # 2. Prévia HTML (Corrigido o '##' do título)
+    # 2. Prévia HTML
     previa_html = f"""
     <div style="font-family: Arial, sans-serif; line-height: 1.6; text-align: justify; color: #1f2937;">
         <h3 style="text-align: center; margin-bottom: 20px; font-weight: bold; font-size: 16px;">ATO AVISO DE REGISTRO DE DIPLOMAS</h3>
         <p>O Instituto Federal de Educacao, Ciencia e Tecnologia da Paraiba - IFPB, CNPJ no 10.738.898/0001-75, em atendimento ao disposto no art. 21 da Portaria MEC numero 1.095 de 25 de outubro de 2018 informa que, no mes de <strong>{mes_nome}</strong> do corrente ano, registrou {total_diplomas} diplomas assim distribuidos: {resumo_livros_texto}.</p>
-        <p style="margin-top: 20px;">A relacao dos diplomas registrados encontra-se no site <a href="https://www.ifpb.edu.br" target="_blank">www.ifpb.edu.br</a>.</p>
+        <p style="margin-top: 20px;">A relacao dos diplomas registrados podera ser consultada em ate trinta dias, no endereco eletronico <a href="https://www.ifpb.edu.br/pre/controle-academico/erd" target="_blank">https://www.ifpb.edu.br/pre/controle-academico/erd</a>.</p>
         <br/>
-        <div style="text-align: center; margin-top: 30px;">
+        <div style="text-align: center; margin-top: 20px;">
+            <p style="margin: 0; font-weight: bold;">Joao Pessoa, {data_emissao_texto}</p>
+            <br/>
             <p style="margin: 0; font-weight: bold;">{nome_reitor}</p>
             <p style="margin: 0; color: #4b5563;">{cargo_reitor}</p>
         </div>
     </div>
     """
 
-    # 3. Prévia RTF
+    # 3. Documento RTF
     previa_rtf = f"""{{\\rtf1\\ansi\\deff0
 {{\\fonttbl{{\\f0\\fnil\\fcharset0 Arial;}}}}
 \\viewkind4\\uc1\\pard\\qc\\b\\f0\\fs24 ATO AVISO DE REGISTRO DE DIPLOMAS\\b0\\par
 \\par
 \\pard\\qj\\fs20 O Instituto Federal de Educacao, Ciencia e Tecnologia da Paraiba - IFPB, CNPJ no 10.738.898/0001-75, em atendimento ao disposto no art. 21 da Portaria MEC numero 1.095 de 25 de outubro de 2018 informa que, no mes de {mes_nome} do corrente ano, registrou {total_diplomas} diplomas assim distribuidos: {resumo_livros_texto}.\\par
 \\par
-A relacao dos diplomas registrados encontra-se no site www.ifpb.edu.br.\\par
+A relacao dos diplomas registrados podera ser consultada em ate trinta dias, no endereco eletronico https://www.ifpb.edu.br/pre/controle-academico/erd.\\par
 \\par
 \\par
-\\pard\\qc\\b {nome_reitor}\\b0\\par
+\\pard\\qc Joao Pessoa, {data_emissao_texto}\\par
+\\par
+\\b {nome_reitor}\\b0\\par
 {cargo_reitor}\\par
 }}"""
 
