@@ -3,8 +3,6 @@ import React, { useState } from 'react';
 export default function App() {
   const [fileDigitais, setFileDigitais] = useState(null);
   const [fileEmitidos, setFileEmitidos] = useState(null);
-  const [nomeReitor, setNomeReitor] = useState("Mary Roberta Meira Marinho");
-  const [cargoReitor, setCargoReitor] = useState("Reitora");
   
   const [loading, setLoading] = useState(false);
   const [resultado, setResultado] = useState(null);
@@ -24,8 +22,8 @@ export default function App() {
     const formData = new FormData();
     formData.append("file_digitais", fileDigitais);
     formData.append("file_emitidos", fileEmitidos);
-    formData.append("nome_reitor", nomeReitor);
-    formData.append("cargo_reitor", cargoReitor);
+    formData.append("nome_reitor", "Mary Roberta Meira Marinho");
+    formData.append("cargo_reitor", "Reitora");
 
     try {
       const response = await fetch(`${API_URL}/api/processar`, {
@@ -86,106 +84,160 @@ export default function App() {
   };
 
   return (
-    <div style={{ maxWidth: '1100px', margin: '30px auto', padding: '0 20px', fontFamily: "'Segoe UI', Roboto, Helvetica, Arial, sans-serif", color: '#1e293b' }}>
+    <div style={{ backgroundColor: '#f8fafc', minHeight: '100vh', fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif", paddingBottom: '50px' }}>
       
-      {/* CABEÇALHO */}
-      <header style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '15px', marginBottom: '25px' }}>
-        <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#0f172a', margin: '0 0 8px 0' }}>Automação de Publicação de Diplomas</h1>
-        <p style={{ margin: 0, color: '#64748b', fontSize: '14px' }}>Cruzamento automático de planilhas e geração do Ato Aviso de Registro de Diplomas (ARD).</p>
+      {/* CABEÇALHO INSTITUCIONAL DO IFPB */}
+      <header style={{ backgroundColor: '#ffffff', paddingTop: '30px', paddingBottom: '20px', textAlign: 'center', borderBottom: '5px solid #00a843' }}>
+        <h1 style={{ fontSize: '22px', fontWeight: '800', color: '#000000', margin: '0 0 6px 0', letterSpacing: '0.5px' }}>
+          INSTITUTO FEDERAL DE EDUCAÇÃO, CIÊNCIA E TECNOLOGIA DA PARAÍBA - IFPB
+        </h1>
+        <p style={{ margin: '0 0 4px 0', fontSize: '14px', color: '#4b5563', fontWeight: '500' }}>
+          Diretoria de Cadastro Acadêmico, Certificação e Diplomação
+        </p>
+        <p style={{ margin: 0, fontSize: '13px', color: '#6b7280' }}>
+          Melhoria de processo para uso interno da DCACD-PRE/IFPB em conformidade com a Portaria MEC nº 1.095 de 25 de outubro de 2018
+        </p>
       </header>
 
-      {/* FORMULÁRIO */}
-      <form onSubmit={handleProcessar} style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', display: 'grid', gap: '20px' }}>
+      {/* CONTAINER PRINCIPAL */}
+      <main style={{ maxWidth: '780px', margin: '40px auto 0 auto', padding: '0 20px' }}>
         
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-          <div style={{ background: '#f8fafc', padding: '16px', border: '1px solid #e2e8f0', borderRadius: '6px' }}>
-            <label style={{ display: 'block', fontWeight: '600', marginBottom: '8px', fontSize: '14px' }}>Planilha de Digitais (.xlsx / .xls):</label>
-            <input type="file" accept=".xlsx, .xls" onChange={(e) => setFileDigitais(e.target.files[0])} required style={{ fontSize: '13px', width: '100%' }} />
-          </div>
+        {/* CARD DE UPLOAD */}
+        <div style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '35px 40px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: '600', color: '#374151', marginTop: 0, marginBottom: '25px' }}>
+            Upload das Planilhas de Origem
+          </h2>
 
-          <div style={{ background: '#f8fafc', padding: '16px', border: '1px solid #e2e8f0', borderRadius: '6px' }}>
-            <label style={{ display: 'block', fontWeight: '600', marginBottom: '8px', fontSize: '14px' }}>Planilha Acumulada de Emitidos (.xlsx / .xls):</label>
-            <input type="file" accept=".xlsx, .xls" onChange={(e) => setFileEmitidos(e.target.files[0])} required style={{ fontSize: '13px', width: '100%' }} />
-          </div>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-          <div>
-            <label style={{ display: 'block', fontWeight: '600', marginBottom: '6px', fontSize: '14px' }}>Nome da Reitoria / Assinatura:</label>
-            <input type="text" value={nomeReitor} onChange={(e) => setNomeReitor(e.target.value)} style={{ width: '100%', padding: '10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }} />
-          </div>
-
-          <div>
-            <label style={{ display: 'block', fontWeight: '600', marginBottom: '6px', fontSize: '14px' }}>Cargo do Subscritor:</label>
-            <input type="text" value={cargoReitor} onChange={(e) => setCargoReitor(e.target.value)} style={{ width: '100%', padding: '10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }} />
-          </div>
-        </div>
-
-        <button type="submit" disabled={loading} style={{ background: loading ? '#94a3b8' : '#2563eb', color: '#ffffff', fontWeight: '600', fontSize: '15px', padding: '12px 24px', border: 'none', borderRadius: '6px', cursor: loading ? 'not-allowed' : 'pointer', justifySelf: 'start', transition: 'background 0.2s' }}>
-          {loading ? "Processando e Cruzando Dados..." : "Processar Planilhas"}
-        </button>
-      </form>
-
-      {/* RESULTADOS */}
-      {resultado && (
-        <div style={{ marginTop: '30px', display: 'grid', gap: '25px' }}>
-          
-          {/* ALERTAS */}
-          {resultado.alertas?.map((alerta, idx) => (
-            <div key={idx} style={{ background: '#fffbeb', borderLeft: '4px solid #f59e0b', padding: '14px 18px', borderRadius: '0 6px 6px 0', color: '#b45309', fontSize: '14px', fontWeight: '500' }}>
-              ⚠️ {alerta.mensagem}
-            </div>
-          ))}
-
-          {/* DOCUMENTO ARD */}
-          <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '30px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-            <div dangerouslySetInnerHTML={{ __html: resultado.relatorio.previa_html }} />
+          <form onSubmit={handleProcessar} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             
-            <div style={{ marginTop: '25px', paddingTop: '15px', borderTop: '1px solid #e2e8f0', display: 'flex', gap: '12px' }}>
-              <button onClick={handleDownloadRTF} style={{ background: '#059669', color: '#ffffff', fontWeight: '600', fontSize: '14px', padding: '10px 20px', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-                📄 Baixar Documento Oficial (.RTF)
-              </button>
+            {/* INPUT 1: DIPLOMAS DIGITAIS */}
+            <div>
+              <label style={{ display: 'block', fontSize: '14px', color: '#374151', marginBottom: '8px', fontWeight: '500' }}>
+                1. Diplomas Digitais (digitais.xls)
+              </label>
+              <div style={{ border: '1px solid #9ca3af', borderRadius: '6px', padding: '6px 12px', display: 'flex', alignItems: 'center' }}>
+                <input 
+                  type="file" 
+                  accept=".xlsx, .xls" 
+                  onChange={(e) => setFileDigitais(e.target.files[0])} 
+                  required 
+                  style={{ fontSize: '14px', color: '#4b5563', width: '100%', cursor: 'pointer' }} 
+                />
+              </div>
             </div>
-          </div>
 
-          {/* TABELA PRÉVIA DA PLANILHA FINAL */}
-          {resultado.relatorio?.dados_tabela?.length > 0 && (
-            <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+            {/* INPUT 2: DIPLOMAS EMITIDOS */}
+            <div>
+              <label style={{ display: 'block', fontSize: '14px', color: '#374151', marginBottom: '8px', fontWeight: '500' }}>
+                2. Diplomas Emitidos (emitidos_2026.xls)
+              </label>
+              <div style={{ border: '1px solid #9ca3af', borderRadius: '6px', padding: '6px 12px', display: 'flex', alignItems: 'center' }}>
+                <input 
+                  type="file" 
+                  accept=".xlsx, .xls" 
+                  onChange={(e) => setFileEmitidos(e.target.files[0])} 
+                  required 
+                  style={{ fontSize: '14px', color: '#4b5563', width: '100%', cursor: 'pointer' }} 
+                />
+              </div>
+            </div>
+
+            {/* BOTÃO PRINCIPAL VERDE */}
+            <button 
+              type="submit" 
+              disabled={loading} 
+              style={{ 
+                backgroundColor: loading ? '#86efac' : '#00a843', 
+                color: '#ffffff', 
+                fontSize: '16px', 
+                fontWeight: '700', 
+                padding: '14px', 
+                border: 'none', 
+                borderRadius: '8px', 
+                cursor: loading ? 'not-allowed' : 'pointer', 
+                marginTop: '10px',
+                transition: 'background-color 0.2s ease' 
+              }}
+            >
+              {loading ? "Processando e Gerando Documentos..." : "Gerar Prévias dos Documentos"}
+            </button>
+          </form>
+        </div>
+
+        {/* ÁREA DE RESULTADOS */}
+        {resultado && (
+          <div style={{ marginTop: '35px', display: 'flex', flexDirection: 'column', gap: '25px' }}>
+            
+            {/* ALERTAS DA API */}
+            {resultado.alertas?.map((alerta, idx) => (
+              <div key={idx} style={{ backgroundColor: '#fffbeb', borderLeft: '4px solid #f59e0b', padding: '14px 18px', borderRadius: '0 8px 8px 0', color: '#b45309', fontSize: '14px' }}>
+                ⚠️ {alerta.mensagem}
+              </div>
+            ))}
+
+            {/* PRÉVIA DO DOCUMENTO ARD */}
+            <div style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '35px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
+              <div dangerouslySetInnerHTML={{ __html: resultado.relatorio.previa_html }} />
               
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#0f172a', margin: 0 }}>Prévia da Planilha Final Processada</h3>
-                
-                {/* BOTÃO PARA DOWNLOAD DO EXCEL */}
-                <button onClick={handleDownloadExcel} style={{ background: '#16a34a', color: '#ffffff', fontWeight: '600', fontSize: '13px', padding: '8px 16px', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                  📊 Baixar Planilha Processada (.XLSX)
+              <div style={{ marginTop: '30px', paddingTop: '20px', borderTop: '1px solid #f3f4f6' }}>
+                <button 
+                  onClick={handleDownloadRTF} 
+                  style={{ backgroundColor: '#00a843', color: '#ffffff', fontWeight: '600', fontSize: '14px', padding: '10px 20px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+                >
+                  📄 Baixar Documento (.RTF)
                 </button>
               </div>
+            </div>
 
-              <div style={{ overflowX: 'auto', maxHeight: '420px', border: '1px solid #e2e8f0', borderRadius: '6px' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
-                  <thead>
-                    <tr style={{ background: '#f1f5f9', position: 'sticky', top: 0, zIndex: 1 }}>
-                      {Object.keys(resultado.relatorio.dados_tabela[0]).map((col) => (
-                        <th key={col} style={{ padding: '10px 14px', borderBottom: '2px solid #cbd5e1', color: '#334155', fontWeight: '700', whiteSpace: 'nowrap' }}>{col}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {resultado.relatorio.dados_tabela.map((row, index) => (
-                      <tr key={index} style={{ borderBottom: '1px solid #e2e8f0', background: index % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
-                        {Object.values(row).map((val, colIdx) => (
-                          <td key={colIdx} style={{ padding: '8px 14px', color: '#475569', whiteSpace: 'nowrap' }}>{String(val)}</td>
+            {/* TABELA DE PRÉVIA DA PLANILHA FINAL */}
+            {resultado.relatorio?.dados_tabela?.length > 0 && (
+              <div style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '30px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
+                
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                  <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#111827', margin: 0 }}>
+                    Prévia da Planilha Final Processada
+                  </h3>
+                  
+                  {/* BOTÃO DE DOWNLOAD DO EXCEL */}
+                  <button 
+                    onClick={handleDownloadExcel} 
+                    style={{ backgroundColor: '#15803d', color: '#ffffff', fontWeight: '600', fontSize: '13px', padding: '8px 16px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+                  >
+                    📊 Baixar Planilha Processada (.XLSX)
+                  </button>
+                </div>
+
+                <div style={{ overflowX: 'auto', maxHeight: '400px', border: '1px solid #e5e7eb', borderRadius: '6px' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
+                    <thead>
+                      <tr style={{ backgroundColor: '#f9fafb', position: 'sticky', top: 0, zIndex: 1 }}>
+                        {Object.keys(resultado.relatorio.dados_tabela[0]).map((col) => (
+                          <th key={col} style={{ padding: '10px 14px', borderBottom: '2px solid #e5e7eb', color: '#374151', fontWeight: '700', whiteSpace: 'nowrap' }}>
+                            {col}
+                          </th>
                         ))}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {resultado.relatorio.dados_tabela.map((row, index) => (
+                        <tr key={index} style={{ borderBottom: '1px solid #f3f4f6', backgroundColor: index % 2 === 0 ? '#ffffff' : '#f9fafb' }}>
+                          {Object.values(row).map((val, colIdx) => (
+                            <td key={colIdx} style={{ padding: '8px 14px', color: '#4b5563', whiteSpace: 'nowrap' }}>
+                              {String(val)}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-        </div>
-      )}
+          </div>
+        )}
+
+      </main>
     </div>
   );
 }
