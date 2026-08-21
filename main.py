@@ -1,8 +1,8 @@
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
-import pandas as pd
 import io
+from typing import Optional
 
 from processador import processar_planilhas
 from gerador_relatorios import gerar_dados_relatorio
@@ -26,7 +26,8 @@ async def processar(
     file_digitais: UploadFile = File(...),
     file_emitidos: UploadFile = File(...),
     nome_reitor: str = Form("Mary Roberta Meira Marinho"),
-    cargo_reitor: str = Form("Reitora")
+    cargo_reitor: str = Form("Reitora"),
+    mes_referencia: Optional[str] = Form(None)
 ):
     try:
         bytes_digitais = io.BytesIO(await file_digitais.read())

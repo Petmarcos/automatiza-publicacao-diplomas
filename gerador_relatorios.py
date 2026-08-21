@@ -143,7 +143,7 @@ def gerar_dados_relatorio(df, nome_reitor="Mary Roberta Meira Marinho", cargo_re
                 "intervalo": intervalo_str
             })
 
-    # Prévia HTML padronizada em Calibri 9pt (12px)
+    # Prévia HTML padronizada em Calibri 9pt
     previa_html = f"""
     <div style="font-family: Calibri, sans-serif; font-size: 12px; line-height: 1.5; text-align: justify; color: #000000;">
         <p style="text-align: center; font-weight: bold; font-size: 12px; margin-bottom: 20px;">##ATO AVISO DE REGISTRO DE DIPLOMAS</p>
@@ -159,7 +159,7 @@ def gerar_dados_relatorio(df, nome_reitor="Mary Roberta Meira Marinho", cargo_re
     </div>
     """
 
-    # RTF Oficial com fonte Calibri (f0) e tamanho 9pt (fs18)
+    # Conteúdo em RTF para download
     previa_rtf = f"""{{\\rtf1\\ansi\\deff0
 {{\\fonttbl{{\\f0\\fnil\\fcharset0 Calibri;}}}}
 \\viewkind4\\uc1\\pard\\qc\\b\\f0\\fs18 ##ATO AVISO DE REGISTRO DE DIPLOMAS\\b0\\par
@@ -175,7 +175,6 @@ A relacao dos diplomas registrados podera ser consultada em ate trinta dias, no 
 ##CAR {cargo_reitor}\\b0\\par
 }}"""
 
-    # Converte os registros da planilha em dicionário para exibição da tabela no Frontend
     dados_tabela_final = df.to_dict(orient="records")
 
     return {
