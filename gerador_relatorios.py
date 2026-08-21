@@ -8,46 +8,63 @@ MESES_PT = {
     9: "setembro", 10: "outubro", 11: "novembro", 12: "dezembro"
 }
 
-def encontrar_coluna_homologacao(df):
-    """Localiza a coluna de homologação independentemente de acentos ou maiúsculas."""
-    coli_map = {str(col).strip().lower(): col for col in df.columns}
-    opcoes = ['data da homologação', 'data da homologacao', 'homologacao', 'data homologacao']
-    
-    for op in opcoes:
-        if op in coli_map:
-            return coli_map[op]
-    return None
-
 def extrair_mes_dominante(df):
-    """Extrai o mês mais frequente interpretando o formato brasileiro DD/MM/AAAA."""
-    col_homolog = encontrar_coluna_homologacao(df)
+    """
+    Procura por datas em formato DD/MM/AAAA em todas as colunas do DataFrame,
+    garantindo que não confunda com números seriais do Excel nemIDs.
+    """
+    meses_encontrados = []
     
-    if col_homolog:
-        datas = pd.to_datetime(df[col_homolog], dayfirst=True, errors='coerce')
-        datas_validas = datas.dropna()
+    # Identifica colunas candidatas
+    colunas_candidatas = [col for col in df.columns if any(p in str(col).lower() for p in ['homolog', 'data', 'dt'])]
+    
+    # Se não achou por nome, testa todas as colunas
+    if not colunas_candidatas:
+        colunas_candidatas = df.columns
+
+    for col in colunas_candidatas:
+        for val in df[col].dropna():
+            val_str = str(val).strip()
+            # Procura o padrão dd/mm/aaaa ou dd-mm-aaaa com regex estrito
+            match = re.search(r'\b(\d{1,2})[/.-](\d{1,2})[/.-](\d{2,4})\b', val_str)
+            if match:
+                p1, p2, ano = int(match.group(1)), int(match.group(2)), int(match.group(3))
+                
+                # Formato brasileiro: p1 = dia, p2 = mês
+                if 1 <= p2 <= 12 and 1 <= p1 <= 31:
+                    meses_encontrados.append(p2)
+                # Caso o dia venha depois (ex: aaaa-mm-dd)
+                elif 1 <= p1 <= 12 and len(str(ano)) == 4 and p1 > 12:
+                    meses_encontrados.append(p1)
+
+    if meses_encontrados:
+        # Retorna o mês mais frequente (moda)
+        mes_mais_comum = max(set(meses_encontrados), key=meses_encontrados.count)
+        return MESES_PT.get(mes_mais_comum, "agosto")
         
-        if not datas_validas.empty:
-            mes_num = int(datas_validas.dt.month.mode()[0])
-            return MESES_PT.get(mes_num, "agosto")
-            
-    # Fallback: mês atual da execução
-    mes_atual = datetime.now().month
-    return MESES_PT.get(mes_atual, "agosto")
+    # Se não encontrou nenhuma data, usa o mês atual (Agosto)
+    return MESES_PT.get(datetime.now().month, "agosto")
 
 def extrair_ano_dominante(df):
-    """Extrai o ano mais frequente a partir da coluna de Homologação."""
-    col_homolog = encontrar_coluna_homologacao(df)
+    """Extrai o ano mais frequente procurando padrões de 4 dígitos (ex: 2026)."""
+    anos_encontrados = []
     
-    if col_homolog:
-        datas = pd.to_datetime(df[col_homolog], dayfirst=True, errors='coerce')
-        datas_validas = datas.dropna()
-        if not datas_validas.empty:
-            return int(datas_validas.dt.year.mode()[0])
-            
+    colunas_candidatas = [col for col in df.columns if any(p in str(col).lower() for p in ['homolog', 'data', 'dt'])]
+    if not colunas_candidatas:
+        colunas_candidatas = df.columns
+
+    for col in colunas_candidatas:
+        for val in df[col].dropna():
+            match = re.search(r'\b(202\d)\b', str(val))
+            if match:
+                anos_encontrados.append(int(match.group(1)))
+
+    if anos_encontrados:
+        return max(set(anos_encontrados), key=anos_encontrados.count)
+        
     return datetime.now().year
 
 def extrair_numero_inteiro(val):
-    """Extrai números inteiros de campos compostos de texto/número."""
     if pd.isna(val):
         return None
     nums = re.findall(r'\d+', str(val))
@@ -64,8 +81,14 @@ def gerar_texto_resumo_livros(df):
         qtd = len(grupo)
         registros = []
         
-        if 'Registro da homologação' in grupo.columns:
-            for reg in grupo['Registro da homologação']:
+        col_reg = None
+        for c in grupo.columns:
+            if 'registro' in str(c).lower():
+                col_reg = c
+                break
+                
+        if col_reg:
+            for reg in grupo[col_reg]:
                 num = extrair_numero_inteiro(reg)
                 if num is not None:
                     registros.append(num)
@@ -95,22 +118,34 @@ def gerar_texto_resumo_livros(df):
 def gerar_dados_relatorio(df, nome_reitor="Mary Roberta Meira Marinho", cargo_reitor="Reitora", mes_referencia=None):
     total_diplomas = len(df)
     
-    # Define o mês: se veio da requisição usa ele; senão, calcula via dataframe/sistema
-    mes_nome = mes_referencia if mes_referencia else extrair_mes_dominante(df)
+    # 1. Se o mês veio selecionado do frontend React, usa ele diretamente.
+    # 2. Caso contrário, faz a busca estrita via expressão regular por DD/MM/AAAA.
+    if mes_referencia and str(mes_referencia).strip() != "":
+        mes_nome = str(mes_referencia).strip().lower()
+    else:
+        mes_nome = extrair_mes_dominante(df)
+        
     ano_num = extrair_ano_dominante(df)
     
-    # Data de emissão completa (ex: 21 de agosto de 2026)
     dia_atual = datetime.now().day
     mes_atual_nome = MESES_PT.get(datetime.now().month, "agosto")
     data_emissao_texto = f"{dia_atual} de {mes_atual_nome} de {ano_num}"
 
     resumo_livros_texto = gerar_texto_resumo_livros(df)
 
-    # 1. Tabela Resumo para a Interface
     resumo_livros_lista = []
     if 'Livro' in df.columns:
+        col_reg = None
+        for c in df.columns:
+            if 'registro' in str(c).lower():
+                col_reg = c
+                break
+
         for livro, grupo in df.groupby('Livro', sort=False):
-            registros = [extrair_numero_inteiro(r) for r in grupo.get('Registro da homologação', []) if extrair_numero_inteiro(r) is not None]
+            registros = []
+            if col_reg:
+                registros = [extrair_numero_inteiro(r) for r in grupo[col_reg] if extrair_numero_inteiro(r) is not None]
+                
             if registros:
                 reg_min = min(registros)
                 reg_max = max(registros)
@@ -124,7 +159,7 @@ def gerar_dados_relatorio(df, nome_reitor="Mary Roberta Meira Marinho", cargo_re
                 "intervalo": intervalo_str
             })
 
-    # 2. Prévia HTML
+    # Prévia HTML
     previa_html = f"""
     <div style="font-family: Arial, sans-serif; line-height: 1.6; text-align: justify; color: #1f2937;">
         <h3 style="text-align: center; margin-bottom: 20px; font-weight: bold; font-size: 16px;">ATO AVISO DE REGISTRO DE DIPLOMAS</h3>
@@ -140,7 +175,7 @@ def gerar_dados_relatorio(df, nome_reitor="Mary Roberta Meira Marinho", cargo_re
     </div>
     """
 
-    # 3. Documento RTF
+    # Documento RTF
     previa_rtf = f"""{{\\rtf1\\ansi\\deff0
 {{\\fonttbl{{\\f0\\fnil\\fcharset0 Arial;}}}}
 \\viewkind4\\uc1\\pard\\qc\\b\\f0\\fs24 ATO AVISO DE REGISTRO DE DIPLOMAS\\b0\\par
