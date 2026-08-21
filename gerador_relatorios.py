@@ -10,51 +10,61 @@ MESES_PT = {
 
 def extrair_mes_dominante(df):
     """
-    Procura por datas em formato DD/MM/AAAA em todas as colunas do DataFrame,
-    garantindo que não confunda com números seriais do Excel nemIDs.
+    Extrai o mês correto independentemente se a coluna for do tipo Date/Timestamp,
+    texto 'DD/MM/AAAA' ou texto 'AAAA-MM-DD'.
     """
     meses_encontrados = []
     
-    # Identifica colunas candidatas
+    # Procura colunas que tenham nome relacionado a homologação ou data
     colunas_candidatas = [col for col in df.columns if any(p in str(col).lower() for p in ['homolog', 'data', 'dt'])]
-    
-    # Se não achou por nome, testa todas as colunas
     if not colunas_candidatas:
         colunas_candidatas = df.columns
 
     for col in colunas_candidatas:
         for val in df[col].dropna():
+            # 1. Se já for um tipo de Data/Timestamp nativo do Python/Pandas
+            if isinstance(val, (datetime, pd.Timestamp)):
+                meses_encontrados.append(val.month)
+                continue
+            
             val_str = str(val).strip()
-            # Procura o padrão dd/mm/aaaa ou dd-mm-aaaa com regex estrito
-            match = re.search(r'\b(\d{1,2})[/.-](\d{1,2})[/.-](\d{2,4})\b', val_str)
-            if match:
-                p1, p2, ano = int(match.group(1)), int(match.group(2)), int(match.group(3))
-                
-                # Formato brasileiro: p1 = dia, p2 = mês
-                if 1 <= p2 <= 12 and 1 <= p1 <= 31:
-                    meses_encontrados.append(p2)
-                # Caso o dia venha depois (ex: aaaa-mm-dd)
-                elif 1 <= p1 <= 12 and len(str(ano)) == 4 and p1 > 12:
-                    meses_encontrados.append(p1)
+            
+            # 2. Formato brasileiro DD/MM/AAAA ou DD-MM-AAAA
+            match_br = re.search(r'\b(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})\b', val_str)
+            if match_br:
+                dia, mes, ano = int(match_br.group(1)), int(match_br.group(2)), int(match_br.group(3))
+                if 1 <= mes <= 12 and 1 <= dia <= 31:
+                    meses_encontrados.append(mes)
+                    continue
+
+            # 3. Formato ISO AAAA-MM-DD ou AAAA/MM/DD
+            match_iso = re.search(r'\b(\d{4})[/.-](\d{1,2})[/.-](\d{1,2})\b', val_str)
+            if match_iso:
+                ano, mes, dia = int(match_iso.group(1)), int(match_iso.group(2)), int(match_iso.group(3))
+                if 1 <= mes <= 12 and 1 <= dia <= 31:
+                    meses_encontrados.append(mes)
+                    continue
 
     if meses_encontrados:
-        # Retorna o mês mais frequente (moda)
+        # Pega o mês mais frequente no lote
         mes_mais_comum = max(set(meses_encontrados), key=meses_encontrados.count)
         return MESES_PT.get(mes_mais_comum, "agosto")
         
-    # Se não encontrou nenhuma data, usa o mês atual (Agosto)
+    # Fallback: Mês atual
     return MESES_PT.get(datetime.now().month, "agosto")
 
 def extrair_ano_dominante(df):
-    """Extrai o ano mais frequente procurando padrões de 4 dígitos (ex: 2026)."""
+    """Extrai o ano mais frequente do lote."""
     anos_encontrados = []
-    
     colunas_candidatas = [col for col in df.columns if any(p in str(col).lower() for p in ['homolog', 'data', 'dt'])]
     if not colunas_candidatas:
         colunas_candidatas = df.columns
 
     for col in colunas_candidatas:
         for val in df[col].dropna():
+            if isinstance(val, (datetime, pd.Timestamp)):
+                anos_encontrados.append(val.year)
+                continue
             match = re.search(r'\b(202\d)\b', str(val))
             if match:
                 anos_encontrados.append(int(match.group(1)))
@@ -71,7 +81,6 @@ def extrair_numero_inteiro(val):
     return int(nums[0]) if nums else None
 
 def gerar_texto_resumo_livros(df):
-    """Gera o trecho textual formatado de distribuição por livros."""
     if df.empty or 'Livro' not in df.columns:
         return ""
 
@@ -118,8 +127,7 @@ def gerar_texto_resumo_livros(df):
 def gerar_dados_relatorio(df, nome_reitor="Mary Roberta Meira Marinho", cargo_reitor="Reitora", mes_referencia=None):
     total_diplomas = len(df)
     
-    # 1. Se o mês veio selecionado do frontend React, usa ele diretamente.
-    # 2. Caso contrário, faz a busca estrita via expressão regular por DD/MM/AAAA.
+    # Prioridade para a seleção manual da interface React, senão extrai via algoritmo
     if mes_referencia and str(mes_referencia).strip() != "":
         mes_nome = str(mes_referencia).strip().lower()
     else:
