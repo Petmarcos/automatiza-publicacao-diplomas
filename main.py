@@ -1,6 +1,6 @@
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response, StreamingResponse
+from fastapi.responses import StreamingResponse
 import io
 import pandas as pd
 
@@ -17,7 +17,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Cache em memória para o download do Excel
 CACHE_EXCEL = {}
 
 @app.post("/api/processar-diplomas")
@@ -32,16 +31,18 @@ async def api_processar_diplomas(
         content_digitais = await file_digitais.read()
         content_emitidos = await file_emitidos.read()
 
-        # 1. Processa e cruza os dados
+        print(f"--- PROCESSANDO NOVO LOTE ---")
+        print(f"Mês informado na requisição: {mes_referencia}")
+
+        # 1. Processa as planilhas
         df_final, alertas, buffer_excel = processar_planilhas(
             io.BytesIO(content_digitais),
             io.BytesIO(content_emitidos)
         )
 
-        # Guarda a planilha tratada para o download do Excel
         CACHE_EXCEL["ultimo_excel"] = buffer_excel
 
-        # 2. Gera a prévia do relatório em RTF, HTML e Resumos por Livro
+        # 2. Gera os relatórios
         relatorio = gerar_dados_relatorio(
             df_final,
             nome_reitor=nome_reitor,
@@ -58,8 +59,8 @@ async def api_processar_diplomas(
         }
 
     except Exception as e:
+        print(f"ERRO NO PROCESSAMENTO: {str(e)}")
         raise HTTPException(status_code=400, detail=f"Erro ao processar planilhas: {str(e)}")
-
 
 @app.get("/api/download-excel")
 async def download_excel():
