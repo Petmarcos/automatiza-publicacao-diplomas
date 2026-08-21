@@ -1,14 +1,13 @@
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import Response, StreamingResponse
 import io
-import pandas as pd 
-from typing import Optional
+import pandas as pd
 
-from processador import processar_diplomas
-from gerador_relatorios import calcular_resumo_livros, gerar_texto_rtf
+from processador import processar_planilhas
+from gerador_relatorios import gerar_dados_relatorio
 
-app = FastAPI()
+app = FastAPI(title="Automatiza Publicação IFPB")
 
 app.add_middleware(
     CORSMiddleware,
@@ -18,75 +17,60 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-dados_cache = {}
+# Cache em memória para o download do Excel
+CACHE_EXCEL = {}
 
 @app.post("/api/processar-diplomas")
-async def api_processar(
-    file_digitais: UploadFile = File(...), 
+async def api_processar_diplomas(
+    file_digitais: UploadFile = File(...),
     file_emitidos: UploadFile = File(...),
-    nome_reitor: Optional[str] = Form("Mary Roberta Meira Marinho"),
-    cargo_reitor: Optional[str] = Form("Reitora")
+    nome_reitor: str = Form("Mary Roberta Meira Marinho"),
+    cargo_reitor: str = Form("Reitora"),
+    mes_referencia: str = Form(None)
 ):
     try:
-        conteudo_digitais = io.BytesIO(await file_digitais.read())
-        conteudo_emitidos = io.BytesIO(await file_emitidos.read())
-        
-        # Processa a planilha e extrai os alertas dos alunos sem emitidos
-        df_resultado, alertas = processar_diplomas(conteudo_digitais, conteudo_emitidos)
-        
-        dados_cache["ultimo_resultado"] = df_resultado.copy()
-        
-        total_geral = len(df_resultado)
-        resumo_livros_obj = calcular_resumo_livros(df_resultado)
-        
-        # Formata o resumo resumido estruturado para a resposta do React
-        resumo_json = []
-        for row in resumo_livros_obj:
-            inicio = int(row.Primeiro_Registro) if not pd.isna(row.Primeiro_Registro) else 0
-            fim = int(row.Ultimo_Registro) if not pd.isna(row.Ultimo_Registro) else 0
-            resumo_json.append({
-                "livro": row.Livro,
-                "quantidade": row.Total_Registros,
-                "intervalo": f"{inicio} a {fim}" if inicio != fim else f"{inicio}"
-            })
+        content_digitais = await file_digitais.read()
+        content_emitidos = await file_emitidos.read()
 
-        resultado_rtf = gerar_texto_rtf(
-            df_resultado, 
-            resumo_livros_obj, 
-            total_geral, 
-            nome_reitor=nome_reitor,
-            cargo_reitor=cargo_reitor
+        # 1. Processa e cruza os dados
+        df_final, alertas, buffer_excel = processar_planilhas(
+            io.BytesIO(content_digitais),
+            io.BytesIO(content_emitidos)
         )
-        
+
+        # Guarda a planilha tratada para o download do Excel
+        CACHE_EXCEL["ultimo_excel"] = buffer_excel
+
+        # 2. Gera a prévia do relatório em RTF, HTML e Resumos por Livro
+        relatorio = gerar_dados_relatorio(
+            df_final,
+            nome_reitor=nome_reitor,
+            cargo_reitor=cargo_reitor,
+            mes_referencia=mes_referencia
+        )
+
         return {
-            "total_geral": total_geral,
-            "previa_texto_rtf": resultado_rtf["rtf"],
-            "previa_html": resultado_rtf["html_previa"],
-            "previa_tabela": df_resultado.to_dict(orient="records"),
+            "total_geral": relatorio["total_geral"],
+            "resumo_livros": relatorio["resumo_livros"],
             "alertas": alertas,
-            "resumo_livros": resumo_json
+            "previa_html": relatorio["previa_html"],
+            "previa_texto_rtf": relatorio["previa_texto_rtf"]
         }
+
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro interno ao processar as planilhas: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Erro ao processar planilhas: {str(e)}")
+
 
 @app.get("/api/download-excel")
 async def download_excel():
-    if "ultimo_resultado" not in dados_cache:
-        raise HTTPException(status_code=400, detail="Nenhum dado processado disponível para download.")
+    if "ultimo_excel" not in CACHE_EXCEL:
+        raise HTTPException(status_code=404, detail="Nenhum arquivo processado disponível para download.")
     
-    df_exportar = dados_cache["ultimo_resultado"].copy()
-    df_exportar = df_exportar.astype(str)
-    
-    output = io.BytesIO()
-    try:
-        with pd.ExcelWriter(output, engine='openpyxl') as writer:
-            df_exportar.to_excel(writer, index=False, sheet_name="Listagem Publicacao")
-        output.seek(0)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro ao gerar arquivo Excel: {str(e)}")
+    excel_buffer = CACHE_EXCEL["ultimo_excel"]
+    excel_buffer.seek(0)
     
     return StreamingResponse(
-        output,
+        excel_buffer,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": "attachment; filename=Listagem_Publicacao_Diplomas.xlsx"}
     )
