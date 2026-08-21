@@ -1,13 +1,13 @@
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
-import io
 import pandas as pd
+import io
 
 from processador import processar_planilhas
 from gerador_relatorios import gerar_dados_relatorio
 
-app = FastAPI(title="Automatiza Publicação IFPB")
+app = FastAPI(title="API de Automação de Publicação de Diplomas")
 
 app.add_middleware(
     CORSMiddleware,
@@ -17,61 +17,53 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-CACHE_EXCEL = {}
+@app.get("/")
+def read_root():
+    return {"status": "API operacional"}
 
-@app.post("/api/processar-diplomas")
-async def api_processar_diplomas(
+@app.post("/api/processar")
+async def processar(
     file_digitais: UploadFile = File(...),
     file_emitidos: UploadFile = File(...),
     nome_reitor: str = Form("Mary Roberta Meira Marinho"),
-    cargo_reitor: str = Form("Reitora"),
-    mes_referencia: str = Form(None)
+    cargo_reitor: str = Form("Reitora")
 ):
     try:
-        content_digitais = await file_digitais.read()
-        content_emitidos = await file_emitidos.read()
+        bytes_digitais = io.BytesIO(await file_digitais.read())
+        bytes_emitidos = io.BytesIO(await file_emitidos.read())
 
-        print(f"--- PROCESSANDO NOVO LOTE ---")
-        print(f"Mês informado na requisição: {mes_referencia}")
+        df_final, alertas, buffer_excel = processar_planilhas(bytes_digitais, bytes_emitidos)
 
-        # 1. Processa as planilhas
-        df_final, alertas, buffer_excel = processar_planilhas(
-            io.BytesIO(content_digitais),
-            io.BytesIO(content_emitidos)
-        )
-
-        CACHE_EXCEL["ultimo_excel"] = buffer_excel
-
-        # 2. Gera os relatórios
-        relatorio = gerar_dados_relatorio(
-            df_final,
+        dados_relatorio = gerar_dados_relatorio(
+            df=df_final,
             nome_reitor=nome_reitor,
-            cargo_reitor=cargo_reitor,
-            mes_referencia=mes_referencia
+            cargo_reitor=cargo_reitor
         )
 
         return {
-            "total_geral": relatorio["total_geral"],
-            "resumo_livros": relatorio["resumo_livros"],
+            "sucesso": True,
             "alertas": alertas,
-            "previa_html": relatorio["previa_html"],
-            "previa_texto_rtf": relatorio["previa_texto_rtf"]
+            "relatorio": dados_relatorio
         }
 
     except Exception as e:
-        print(f"ERRO NO PROCESSAMENTO: {str(e)}")
-        raise HTTPException(status_code=400, detail=f"Erro ao processar planilhas: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
 
-@app.get("/api/download-excel")
-async def download_excel():
-    if "ultimo_excel" not in CACHE_EXCEL:
-        raise HTTPException(status_code=404, detail="Nenhum arquivo processado disponível para download.")
-    
-    excel_buffer = CACHE_EXCEL["ultimo_excel"]
-    excel_buffer.seek(0)
-    
-    return StreamingResponse(
-        excel_buffer,
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": "attachment; filename=Listagem_Publicacao_Diplomas.xlsx"}
-    )
+@app.post("/api/download-excel")
+async def download_excel(
+    file_digitais: UploadFile = File(...),
+    file_emitidos: UploadFile = File(...)
+):
+    try:
+        bytes_digitais = io.BytesIO(await file_digitais.read())
+        bytes_emitidos = io.BytesIO(await file_emitidos.read())
+
+        _, _, buffer_excel = processar_planilhas(bytes_digitais, bytes_emitidos)
+
+        return StreamingResponse(
+            buffer_excel,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": "attachment; filename=Cruzamento_Diplomas.xlsx"}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
