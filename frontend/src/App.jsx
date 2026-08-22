@@ -100,7 +100,7 @@ export default function App() {
       </header>
 
       {/* CONTAINER PRINCIPAL */}
-      <main style={{ maxWidth: '780px', margin: '40px auto 0 auto', padding: '0 20px' }}>
+      <main style={{ maxWidth: '850px', margin: '40px auto 0 auto', padding: '0 20px' }}>
         
         {/* CARD DE UPLOAD */}
         <div style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '35px 40px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
@@ -175,7 +175,42 @@ export default function App() {
               </div>
             ))}
 
-            {/* PRÉVIA DO DOCUMENTO ARD */}
+            {/* 1ª SAÍDA: QUADRO RESUMO DOS REGISTROS POR LIVRO */}
+            {resultado.relatorio?.resumo_livros?.length > 0 && (
+              <div style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '30px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#111827', margin: '0 0 16px 0' }}>
+                  Quadro Resumo de Registros por Livro
+                </h3>
+                
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px', textAlign: 'left' }}>
+                  <thead>
+                    <tr style={{ backgroundColor: '#f3f4f6', borderBottom: '2px solid #e5e7eb' }}>
+                      <th style={{ padding: '10px 14px', color: '#374151', fontWeight: '700' }}>Livro</th>
+                      <th style={{ padding: '10px 14px', color: '#374151', fontWeight: '700', textAlign: 'center' }}>Registros</th>
+                      <th style={{ padding: '10px 14px', color: '#374151', fontWeight: '700' }}>Intervalo</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {resultado.relatorio.resumo_livros.map((item, index) => (
+                      <tr key={index} style={{ borderBottom: '1px solid #e5e7eb', backgroundColor: index % 2 === 0 ? '#ffffff' : '#f9fafb' }}>
+                        <td style={{ padding: '10px 14px', color: '#111827', fontWeight: '500' }}>{item.livro}</td>
+                        <td style={{ padding: '10px 14px', color: '#111827', textAlign: 'center' }}>{item.quantidade}</td>
+                        <td style={{ padding: '10px 14px', color: '#4b5563' }}>{item.intervalo}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr style={{ backgroundColor: '#f9fafb', borderTop: '2px solid #e5e7eb', fontWeight: '700' }}>
+                      <td style={{ padding: '12px 14px', color: '#111827' }}>Total</td>
+                      <td style={{ padding: '12px 14px', color: '#111827', textAlign: 'center' }}>{resultado.relatorio.total_geral}</td>
+                      <td style={{ padding: '12px 14px' }}></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            )}
+
+            {/* 2ª SAÍDA: PRÉVIA DO DOCUMENTO ARD */}
             <div style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '35px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
               <div dangerouslySetInnerHTML={{ __html: resultado.relatorio.previa_html }} />
               
@@ -189,7 +224,7 @@ export default function App() {
               </div>
             </div>
 
-            {/* TABELA DE PRÉVIA DA PLANILHA FINAL */}
+            {/* 3ª SAÍDA: PRÉVIA DA PLANILHA FINAL PROCESSADA */}
             {resultado.relatorio?.dados_tabela?.length > 0 && (
               <div style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '30px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
                 
