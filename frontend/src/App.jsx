@@ -36,6 +36,7 @@ export default function App() {
       }
 
       const data = await response.json();
+      console.log("Retorno do Backend:", data); // Inspecionar estrutura no DevTools (F12)
       setResultado(data);
     } catch (err) {
       alert(err.message);
@@ -83,8 +84,15 @@ export default function App() {
     }
   };
 
-  // Identifica inconsistências/registros sem correspondência vindos da API
-  const registrosSemCorrespondencia = resultado?.inconsistencias || resultado?.diplomas_sem_correspondencia || [];
+  // Mapeia todas as possíveis chaves que o backend pode usar para retornar pendências/inconsistências
+  const registrosSemCorrespondencia = 
+    resultado?.relatorio?.sem_correspondencia ||
+    resultado?.relatorio?.inconsistencias ||
+    resultado?.relatorio?.diplomas_sem_correspondencia ||
+    resultado?.sem_correspondencia ||
+    resultado?.inconsistencias ||
+    resultado?.diplomas_sem_correspondencia ||
+    [];
 
   return (
     <div style={{ backgroundColor: '#f8fafc', minHeight: '100vh', fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif", paddingBottom: '50px' }}>
@@ -231,17 +239,20 @@ export default function App() {
             {registrosSemCorrespondencia.length > 0 && (
               <div style={{ backgroundColor: '#dc2626', color: '#ffffff', borderRadius: '12px', padding: '24px 30px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
                 <h4 style={{ margin: '0 0 12px 0', fontSize: '16px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  ⚠️ Registros em digitais.xls sem correspondentes em emitidos_2026.xls
+                  ⚠️ Registros em digitais.xls sem correspondentes em emitidos_2026.xls ({registrosSemCorrespondencia.length})
                 </h4>
                 <p style={{ margin: '0 0 14px 0', fontSize: '13px', color: '#fef2f2' }}>
                   Os seguintes alunos constam na planilha de digitais, mas não foram localizados na planilha de emitidos:
                 </p>
                 <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '14px', lineHeight: '1.6', fontWeight: '500' }}>
-                  {registrosSemCorrespondencia.map((item, idx) => (
-                    <li key={idx}>
-                      {typeof item === 'object' ? `${item.matricula} - ${item.nome}` : item}
-                    </li>
-                  ))}
+                  {registrosSemCorrespondencia.map((item, idx) => {
+                    if (typeof item === 'object' && item !== null) {
+                      const matricula = item.matricula || item.MATRICULA || item.Matricula || item['Matrícula'] || item['MATRÍCULA'] || Object.values(item)[0];
+                      const nome = item.nome || item.NOME || item.Nome || item['Nome do Aluno'] || item['NOME DO ALUNO'] || Object.values(item)[1];
+                      return <li key={idx}>{matricula} - {nome}</li>;
+                    }
+                    return <li key={idx}>{String(item)}</li>;
+                  })}
                 </ul>
               </div>
             )}
