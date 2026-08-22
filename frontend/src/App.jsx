@@ -84,7 +84,7 @@ export default function App() {
     }
   };
 
-  // Mapeia registros sem correspondência vindos da API ou detectados nos dados da tabela (campos nulos/vazios)
+  // Identifica registros com pendência nos dados da tabela (verifica se CPF, e-MEC ou outro campo chave é "-" ou nulo)
   const obterRegistrosIncompletos = () => {
     const daApi = 
       resultado?.relatorio?.sem_correspondencia ||
@@ -92,15 +92,18 @@ export default function App() {
       resultado?.relatorio?.diplomas_sem_correspondencia ||
       resultado?.sem_correspondencia ||
       resultado?.inconsistencias ||
-      resultado?.diplomas_sem_correspondencia ||
-      [];
+      resultado?.diplomas_sem_correspondencia;
 
-    if (daApi.length > 0) return daApi;
+    if (daApi && daApi.length > 0) return daApi;
 
-    // Se a API não retornou a lista explícita, inspeciona os dados da tabela processada por linhas com colunas vazias
+    // Filtra diretamente na tabela os registros que possuem traço "-", nulo ou vazio nos campos vindos de emitidos
     if (resultado?.relatorio?.dados_tabela) {
       return resultado.relatorio.dados_tabela.filter(row => {
-        return Object.values(row).some(val => val === null || val === "" || val === undefined);
+        return Object.values(row).some(val => {
+          if (val === null || val === undefined) return true;
+          const str = String(val).trim();
+          return str === '-' || str === '' || str === 'None' || str === 'null';
+        });
       });
     }
 
@@ -265,7 +268,7 @@ export default function App() {
               </div>
             </div>
 
-            {/* ALERTA EM RED DE REGISTROS SEM CORRESPONDENTE EM EMITIDOS */}
+            {/* ALERTA VERMELHO DE REGISTROS SEM CORRESPONDENTE EM EMITIDOS */}
             {registrosSemCorrespondencia.length > 0 && (
               <div style={{ backgroundColor: '#dc2626', color: '#ffffff', borderRadius: '12px', padding: '24px 30px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
                 <h4 style={{ margin: '0 0 12px 0', fontSize: '16px', fontWeight: '700' }}>
@@ -274,11 +277,12 @@ export default function App() {
                 <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '14px', lineHeight: '1.6', fontWeight: '500' }}>
                   {registrosSemCorrespondencia.map((item, idx) => {
                     if (typeof item === 'object' && item !== null) {
-                      const matricula = item.matricula || item.MATRICULA || item.Matricula || item['Matrícula'] || item['MATRÍCULA'] || Object.values(item)[0];
-                      const nome = item.nome || item.NOME || item.Nome || item['Nome do Aluno'] || item['NOME DO ALUNO'] || Object.values(item)[1];
+                      const matricula = item.Matrícula || item.MATRÍCULA || item.matricula || item.MATRICULA || item.Matricula || item.CPF || Object.values(item)[0] || '';
+                      const nome = item.Aluno || item.ALUNO || item.nome || item.NOME || item.Nome || item['Nome do Aluno'] || Object.values(item)[1] || '';
+                      
                       return (
                         <li key={idx}>
-                          {matricula} - {nome} - Diploma emitido em exercício anterior - Favor verificar
+                          {matricula ? `${matricula} - ` : ''}{nome} - Diploma emitido em exercício anterior - Favor verificar
                         </li>
                       );
                     }
