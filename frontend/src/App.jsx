@@ -83,6 +83,9 @@ export default function App() {
     }
   };
 
+  // Identifica inconsistências/registros sem correspondência vindos da API
+  const registrosSemCorrespondencia = resultado?.inconsistencias || resultado?.diplomas_sem_correspondencia || [];
+
   return (
     <div style={{ backgroundColor: '#f8fafc', minHeight: '100vh', fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif", paddingBottom: '50px' }}>
       
@@ -168,7 +171,7 @@ export default function App() {
         {resultado && (
           <div style={{ marginTop: '35px', display: 'flex', flexDirection: 'column', gap: '25px' }}>
             
-            {/* ALERTAS DA API */}
+            {/* ALERTAS GERAIS DA API */}
             {resultado.alertas?.map((alerta, idx) => (
               <div key={idx} style={{ backgroundColor: '#fffbeb', borderLeft: '4px solid #f59e0b', padding: '14px 18px', borderRadius: '0 8px 8px 0', color: '#b45309', fontSize: '14px' }}>
                 ⚠️ {alerta.mensagem}
@@ -223,6 +226,25 @@ export default function App() {
                 </button>
               </div>
             </div>
+
+            {/* ALERTA DE REGISTROS SEM CORRESPONDÊNCIA (FUNDO VERMELHO, LETRAS BRANCAS) */}
+            {registrosSemCorrespondencia.length > 0 && (
+              <div style={{ backgroundColor: '#dc2626', color: '#ffffff', borderRadius: '12px', padding: '24px 30px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
+                <h4 style={{ margin: '0 0 12px 0', fontSize: '16px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  ⚠️ Registros em digitais.xls sem correspondentes em emitidos_2026.xls
+                </h4>
+                <p style={{ margin: '0 0 14px 0', fontSize: '13px', color: '#fef2f2' }}>
+                  Os seguintes alunos constam na planilha de digitais, mas não foram localizados na planilha de emitidos:
+                </p>
+                <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '14px', lineHeight: '1.6', fontWeight: '500' }}>
+                  {registrosSemCorrespondencia.map((item, idx) => (
+                    <li key={idx}>
+                      {typeof item === 'object' ? `${item.matricula} - ${item.nome}` : item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             {/* 3ª SAÍDA: PRÉVIA DA PLANILHA FINAL PROCESSADA */}
             {resultado.relatorio?.dados_tabela?.length > 0 && (
