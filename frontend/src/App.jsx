@@ -177,7 +177,7 @@ export default function App() {
 
             {/* 1ª SAÍDA: QUADRO RESUMO DOS REGISTROS POR LIVRO */}
             {resultado.relatorio?.resumo_livros?.length > 0 && (
-              <div style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '30px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
+              <div style={{ backgroundColor: '#ffffff', border: '2px solid #006622', borderRadius: '12px', padding: '30px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
                 <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#111827', margin: '0 0 16px 0' }}>
                   Quadro Resumo de Registros por Livro
                 </h3>
@@ -211,7 +211,7 @@ export default function App() {
             )}
 
             {/* 2ª SAÍDA: PRÉVIA DO DOCUMENTO ARD */}
-            <div style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '35px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
+            <div style={{ backgroundColor: '#ffffff', border: '2px solid #006622', borderRadius: '12px', padding: '35px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
               <div dangerouslySetInnerHTML={{ __html: resultado.relatorio.previa_html }} />
               
               <div style={{ marginTop: '30px', paddingTop: '20px', borderTop: '1px solid #f3f4f6' }}>
@@ -226,7 +226,7 @@ export default function App() {
 
             {/* 3ª SAÍDA: PRÉVIA DA PLANILHA FINAL PROCESSADA */}
             {resultado.relatorio?.dados_tabela?.length > 0 && (
-              <div style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '30px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
+              <div style={{ backgroundColor: '#ffffff', border: '2px solid #006622', borderRadius: '12px', padding: '30px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
                 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                   <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#111827', margin: 0 }}>
