@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 export default function App() {
   const [fileDigitais, setFileDigitais] = useState(null);
   const [fileEmitidos, setFileEmitidos] = useState(null);
+  const [nomeReitor, setNomeReitor] = useState("Mary Roberta Meira Marinho");
   
   const [loading, setLoading] = useState(false);
   const [resultado, setResultado] = useState(null);
@@ -22,7 +23,7 @@ export default function App() {
     const formData = new FormData();
     formData.append("file_digitais", fileDigitais);
     formData.append("file_emitidos", fileEmitidos);
-    formData.append("nome_reitor", "Mary Roberta Meira Marinho");
+    formData.append("nome_reitor", nomeReitor);
     formData.append("cargo_reitor", "Reitora");
 
     try {
@@ -36,7 +37,6 @@ export default function App() {
       }
 
       const data = await response.json();
-      console.log("Retorno do Backend:", data); // Inspecionar estrutura no DevTools (F12)
       setResultado(data);
     } catch (err) {
       alert(err.message);
@@ -84,15 +84,30 @@ export default function App() {
     }
   };
 
-  // Mapeia todas as possíveis chaves que o backend pode usar para retornar pendências/inconsistências
-  const registrosSemCorrespondencia = 
-    resultado?.relatorio?.sem_correspondencia ||
-    resultado?.relatorio?.inconsistencias ||
-    resultado?.relatorio?.diplomas_sem_correspondencia ||
-    resultado?.sem_correspondencia ||
-    resultado?.inconsistencias ||
-    resultado?.diplomas_sem_correspondencia ||
-    [];
+  // Mapeia registros sem correspondência vindos da API ou detectados nos dados da tabela (campos nulos/vazios)
+  const obterRegistrosIncompletos = () => {
+    const daApi = 
+      resultado?.relatorio?.sem_correspondencia ||
+      resultado?.relatorio?.inconsistencias ||
+      resultado?.relatorio?.diplomas_sem_correspondencia ||
+      resultado?.sem_correspondencia ||
+      resultado?.inconsistencias ||
+      resultado?.diplomas_sem_correspondencia ||
+      [];
+
+    if (daApi.length > 0) return daApi;
+
+    // Se a API não retornou a lista explícita, inspeciona os dados da tabela processada por linhas com colunas vazias
+    if (resultado?.relatorio?.dados_tabela) {
+      return resultado.relatorio.dados_tabela.filter(row => {
+        return Object.values(row).some(val => val === null || val === "" || val === undefined);
+      });
+    }
+
+    return [];
+  };
+
+  const registrosSemCorrespondencia = obterRegistrosIncompletos();
 
   return (
     <div style={{ backgroundColor: '#f8fafc', minHeight: '100vh', fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif", paddingBottom: '50px' }}>
@@ -113,14 +128,29 @@ export default function App() {
       {/* CONTAINER PRINCIPAL */}
       <main style={{ maxWidth: '850px', margin: '40px auto 0 auto', padding: '0 20px' }}>
         
-        {/* CARD DE UPLOAD */}
+        {/* CARD DE UPLOAD E CONFIGURAÇÃO */}
         <div style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '35px 40px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
           <h2 style={{ fontSize: '18px', fontWeight: '600', color: '#374151', marginTop: 0, marginBottom: '25px' }}>
-            Upload das Planilhas de Origem
+            Upload das Planilhas e Parâmetros
           </h2>
 
           <form onSubmit={handleProcessar} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             
+            {/* INPUT: NOME DO REITOR(A) */}
+            <div>
+              <label style={{ display: 'block', fontSize: '14px', color: '#374151', marginBottom: '8px', fontWeight: '600' }}>
+                Nome do(a) Reitor(a) / Assinatura do Aviso:
+              </label>
+              <input 
+                type="text" 
+                value={nomeReitor} 
+                onChange={(e) => setNomeReitor(e.target.value)} 
+                required 
+                placeholder="Digite o nome do(a) reitor(a)"
+                style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #9ca3af', fontSize: '14px', color: '#1f2937', boxSizing: 'border-box' }}
+              />
+            </div>
+
             {/* INPUT 1: DIPLOMAS DIGITAIS */}
             <div>
               <label style={{ display: 'block', fontSize: '14px', color: '#374151', marginBottom: '8px', fontWeight: '500' }}>
@@ -235,23 +265,28 @@ export default function App() {
               </div>
             </div>
 
-            {/* ALERTA DE REGISTROS SEM CORRESPONDÊNCIA (FUNDO VERMELHO, LETRAS BRANCAS) */}
+            {/* ALERTA EM RED DE REGISTROS SEM CORRESPONDENTE EM EMITIDOS */}
             {registrosSemCorrespondencia.length > 0 && (
               <div style={{ backgroundColor: '#dc2626', color: '#ffffff', borderRadius: '12px', padding: '24px 30px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
-                <h4 style={{ margin: '0 0 12px 0', fontSize: '16px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  ⚠️ Registros em digitais.xls sem correspondentes em emitidos_2026.xls ({registrosSemCorrespondencia.length})
+                <h4 style={{ margin: '0 0 12px 0', fontSize: '16px', fontWeight: '700' }}>
+                  ⚠️ Registros com pendência no cruzamento ({registrosSemCorrespondencia.length})
                 </h4>
-                <p style={{ margin: '0 0 14px 0', fontSize: '13px', color: '#fef2f2' }}>
-                  Os seguintes alunos constam na planilha de digitais, mas não foram localizados na planilha de emitidos:
-                </p>
                 <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '14px', lineHeight: '1.6', fontWeight: '500' }}>
                   {registrosSemCorrespondencia.map((item, idx) => {
                     if (typeof item === 'object' && item !== null) {
                       const matricula = item.matricula || item.MATRICULA || item.Matricula || item['Matrícula'] || item['MATRÍCULA'] || Object.values(item)[0];
                       const nome = item.nome || item.NOME || item.Nome || item['Nome do Aluno'] || item['NOME DO ALUNO'] || Object.values(item)[1];
-                      return <li key={idx}>{matricula} - {nome}</li>;
+                      return (
+                        <li key={idx}>
+                          {matricula} - {nome} - Diploma emitido em exercício anterior - Favor verificar
+                        </li>
+                      );
                     }
-                    return <li key={idx}>{String(item)}</li>;
+                    return (
+                      <li key={idx}>
+                        {String(item)} - Diploma emitido em exercício anterior - Favor verificar
+                      </li>
+                    );
                   })}
                 </ul>
               </div>
@@ -291,7 +326,7 @@ export default function App() {
                         <tr key={index} style={{ borderBottom: '1px solid #f3f4f6', backgroundColor: index % 2 === 0 ? '#ffffff' : '#f9fafb' }}>
                           {Object.values(row).map((val, colIdx) => (
                             <td key={colIdx} style={{ padding: '8px 14px', color: '#4b5563', whiteSpace: 'nowrap' }}>
-                              {String(val)}
+                              {val === null || val === "" || val === undefined ? '-' : String(val)}
                             </td>
                           ))}
                         </tr>
