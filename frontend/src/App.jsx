@@ -7,6 +7,7 @@ export default function App() {
   
   const [loading, setLoading] = useState(false);
   const [resultado, setResultado] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false); // Controle da modal
 
   const API_URL = "https://automatiza-publicacao-api.onrender.com";
 
@@ -38,11 +39,16 @@ export default function App() {
 
       const data = await response.json();
       setResultado(data);
+      setIsModalOpen(true); // Abre a janela flutuante após o processamento
     } catch (err) {
       alert(err.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleFecharModal = () => {
+    setIsModalOpen(false);
   };
 
   const handleDownloadRTF = () => {
@@ -84,7 +90,7 @@ export default function App() {
     }
   };
 
-  // Identifica registros com pendência nos dados da tabela (verifica se CPF, e-MEC ou outro campo chave é "-" ou nulo)
+  // Identifica registros com pendência nos dados da tabela (CPF, e-MEC ou outro campo chave com "-" ou nulo)
   const obterRegistrosIncompletos = () => {
     const daApi = 
       resultado?.relatorio?.sem_correspondencia ||
@@ -96,7 +102,6 @@ export default function App() {
 
     if (daApi && daApi.length > 0) return daApi;
 
-    // Filtra diretamente na tabela os registros que possuem traço "-", nulo ou vazio nos campos vindos de emitidos
     if (resultado?.relatorio?.dados_tabela) {
       return resultado.relatorio.dados_tabela.filter(row => {
         return Object.values(row).some(val => {
@@ -208,143 +213,239 @@ export default function App() {
           </form>
         </div>
 
-        {/* ÁREA DE RESULTADOS */}
-        {resultado && (
-          <div style={{ marginTop: '35px', display: 'flex', flexDirection: 'column', gap: '25px' }}>
+      </main>
+
+      {/* JANELA FLUTUANTE (MODAL DE RESULTADOS) */}
+      {isModalOpen && resultado && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          backgroundColor: 'rgba(0, 0, 0, 0.65)',
+          zIndex: 1000,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: '20px',
+          boxSizing: 'border-box'
+        }}>
+          
+          <div style={{
+            backgroundColor: '#f8fafc',
+            width: '100%',
+            maxWidth: '900px',
+            maxHeight: '90vh',
+            borderRadius: '16px',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3)',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden'
+          }}>
             
-            {/* ALERTAS GERAIS DA API */}
-            {resultado.alertas?.map((alerta, idx) => (
-              <div key={idx} style={{ backgroundColor: '#fffbeb', borderLeft: '4px solid #f59e0b', padding: '14px 18px', borderRadius: '0 8px 8px 0', color: '#b45309', fontSize: '14px' }}>
-                ⚠️ {alerta.mensagem}
+            {/* CABEÇALHO DA MODAL */}
+            <div style={{
+              backgroundColor: '#ffffff',
+              padding: '20px 30px',
+              borderBottom: '1px solid #e5e7eb',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              sticky: 'top'
+            }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#111827' }}>
+                  Resultados do Processamento
+                </h2>
+                <p style={{ margin: '2px 0 0 0', fontSize: '13px', color: '#6b7280' }}>
+                  Aviso de Registro e cruzamento das planilhas concluído
+                </p>
               </div>
-            ))}
 
-            {/* 1ª SAÍDA: QUADRO RESUMO DOS REGISTROS POR LIVRO */}
-            {resultado.relatorio?.resumo_livros?.length > 0 && (
-              <div style={{ backgroundColor: '#ffffff', border: '2px solid #006622', borderRadius: '12px', padding: '30px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
-                <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#111827', margin: '0 0 16px 0' }}>
-                  Quadro Resumo de Registros por Livro
-                </h3>
-                
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px', textAlign: 'left' }}>
-                  <thead>
-                    <tr style={{ backgroundColor: '#f3f4f6', borderBottom: '2px solid #e5e7eb' }}>
-                      <th style={{ padding: '10px 14px', color: '#374151', fontWeight: '700' }}>Livro</th>
-                      <th style={{ padding: '10px 14px', color: '#374151', fontWeight: '700', textAlign: 'center' }}>Registros</th>
-                      <th style={{ padding: '10px 14px', color: '#374151', fontWeight: '700' }}>Intervalo</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {resultado.relatorio.resumo_livros.map((item, index) => (
-                      <tr key={index} style={{ borderBottom: '1px solid #e5e7eb', backgroundColor: index % 2 === 0 ? '#ffffff' : '#f9fafb' }}>
-                        <td style={{ padding: '10px 14px', color: '#111827', fontWeight: '500' }}>{item.livro}</td>
-                        <td style={{ padding: '10px 14px', color: '#111827', textAlign: 'center' }}>{item.quantidade}</td>
-                        <td style={{ padding: '10px 14px', color: '#4b5563' }}>{item.intervalo}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  <tfoot>
-                    <tr style={{ backgroundColor: '#f9fafb', borderTop: '2px solid #e5e7eb', fontWeight: '700' }}>
-                      <td style={{ padding: '12px 14px', color: '#111827' }}>Total</td>
-                      <td style={{ padding: '12px 14px', color: '#111827', textAlign: 'center' }}>{resultado.relatorio.total_geral}</td>
-                      <td style={{ padding: '12px 14px' }}></td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
-            )}
-
-            {/* 2ª SAÍDA: PRÉVIA DO DOCUMENTO ARD */}
-            <div style={{ backgroundColor: '#ffffff', border: '2px solid #006622', borderRadius: '12px', padding: '35px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
-              <div dangerouslySetInnerHTML={{ __html: resultado.relatorio.previa_html }} />
-              
-              <div style={{ marginTop: '30px', paddingTop: '20px', borderTop: '1px solid #f3f4f6' }}>
-                <button 
-                  onClick={handleDownloadRTF} 
-                  style={{ backgroundColor: '#00a843', color: '#ffffff', fontWeight: '600', fontSize: '14px', padding: '10px 20px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
-                >
-                  📄 Baixar Documento (.RTF)
-                </button>
-              </div>
+              {/* BOTÃO DE FECHAR */}
+              <button 
+                onClick={handleFecharModal}
+                style={{
+                  backgroundColor: '#ef4444',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '8px 16px',
+                  fontSize: '14px',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                ✕ Fechar
+              </button>
             </div>
 
-            {/* ALERTA VERMELHO DE REGISTROS SEM CORRESPONDENTE EM EMITIDOS */}
-            {registrosSemCorrespondencia.length > 0 && (
-              <div style={{ backgroundColor: '#dc2626', color: '#ffffff', borderRadius: '12px', padding: '24px 30px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
-                <h4 style={{ margin: '0 0 12px 0', fontSize: '16px', fontWeight: '700' }}>
-                  ⚠️ Registros com pendência no cruzamento ({registrosSemCorrespondencia.length})
-                </h4>
-                <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '14px', lineHeight: '1.6', fontWeight: '500' }}>
-                  {registrosSemCorrespondencia.map((item, idx) => {
-                    if (typeof item === 'object' && item !== null) {
-                      const matricula = item.Matrícula || item.MATRÍCULA || item.matricula || item.MATRICULA || item.Matricula || item.CPF || Object.values(item)[0] || '';
-                      const nome = item.Aluno || item.ALUNO || item.nome || item.NOME || item.Nome || item['Nome do Aluno'] || Object.values(item)[1] || '';
-                      
-                      return (
-                        <li key={idx}>
-                          {matricula ? `${matricula} - ` : ''}{nome} - Diploma emitido em exercício anterior - Favor verificar
-                        </li>
-                      );
-                    }
-                    return (
-                      <li key={idx}>
-                        {String(item)} - Diploma emitido em exercício anterior - Favor verificar
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            )}
+            {/* CORPO ROLÁVEL DA MODAL COM AS 3 SAÍDAS */}
+            <div style={{ padding: '30px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '25px' }}>
+              
+              {/* ALERTAS GERAIS DA API */}
+              {resultado.alertas?.map((alerta, idx) => (
+                <div key={idx} style={{ backgroundColor: '#fffbeb', borderLeft: '4px solid #f59e0b', padding: '14px 18px', borderRadius: '0 8px 8px 0', color: '#b45309', fontSize: '14px' }}>
+                  ⚠️ {alerta.mensagem}
+                </div>
+              ))}
 
-            {/* 3ª SAÍDA: PRÉVIA DA PLANILHA FINAL PROCESSADA */}
-            {resultado.relatorio?.dados_tabela?.length > 0 && (
-              <div style={{ backgroundColor: '#ffffff', border: '2px solid #006622', borderRadius: '12px', padding: '30px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
-                
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                  <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#111827', margin: 0 }}>
-                    Prévia da Planilha Final Processada
+              {/* 1ª SAÍDA: QUADRO RESUMO DOS REGISTROS POR LIVRO */}
+              {resultado.relatorio?.resumo_livros?.length > 0 && (
+                <div style={{ backgroundColor: '#ffffff', border: '2px solid #006622', borderRadius: '12px', padding: '25px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+                  <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#111827', margin: '0 0 16px 0' }}>
+                    Quadro Resumo de Registros por Livro
                   </h3>
                   
-                  {/* BOTÃO DE DOWNLOAD DO EXCEL */}
-                  <button 
-                    onClick={handleDownloadExcel} 
-                    style={{ backgroundColor: '#15803d', color: '#ffffff', fontWeight: '600', fontSize: '13px', padding: '8px 16px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
-                  >
-                    📊 Baixar Planilha Processada (.XLSX)
-                  </button>
-                </div>
-
-                <div style={{ overflowX: 'auto', maxHeight: '400px', border: '1px solid #e5e7eb', borderRadius: '6px' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px', textAlign: 'left' }}>
                     <thead>
-                      <tr style={{ backgroundColor: '#f9fafb', position: 'sticky', top: 0, zIndex: 1 }}>
-                        {Object.keys(resultado.relatorio.dados_tabela[0]).map((col) => (
-                          <th key={col} style={{ padding: '10px 14px', borderBottom: '2px solid #e5e7eb', color: '#374151', fontWeight: '700', whiteSpace: 'nowrap' }}>
-                            {col}
-                          </th>
-                        ))}
+                      <tr style={{ backgroundColor: '#f3f4f6', borderBottom: '2px solid #e5e7eb' }}>
+                        <th style={{ padding: '10px 14px', color: '#374151', fontWeight: '700' }}>Livro</th>
+                        <th style={{ padding: '10px 14px', color: '#374151', fontWeight: '700', textAlign: 'center' }}>Registros</th>
+                        <th style={{ padding: '10px 14px', color: '#374151', fontWeight: '700' }}>Intervalo</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {resultado.relatorio.dados_tabela.map((row, index) => (
-                        <tr key={index} style={{ borderBottom: '1px solid #f3f4f6', backgroundColor: index % 2 === 0 ? '#ffffff' : '#f9fafb' }}>
-                          {Object.values(row).map((val, colIdx) => (
-                            <td key={colIdx} style={{ padding: '8px 14px', color: '#4b5563', whiteSpace: 'nowrap' }}>
-                              {val === null || val === "" || val === undefined ? '-' : String(val)}
-                            </td>
-                          ))}
+                      {resultado.relatorio.resumo_livros.map((item, index) => (
+                        <tr key={index} style={{ borderBottom: '1px solid #e5e7eb', backgroundColor: index % 2 === 0 ? '#ffffff' : '#f9fafb' }}>
+                          <td style={{ padding: '10px 14px', color: '#111827', fontWeight: '500' }}>{item.livro}</td>
+                          <td style={{ padding: '10px 14px', color: '#111827', textAlign: 'center' }}>{item.quantidade}</td>
+                          <td style={{ padding: '10px 14px', color: '#4b5563' }}>{item.intervalo}</td>
                         </tr>
                       ))}
                     </tbody>
+                    <tfoot>
+                      <tr style={{ backgroundColor: '#f9fafb', borderTop: '2px solid #e5e7eb', fontWeight: '700' }}>
+                        <td style={{ padding: '12px 14px', color: '#111827' }}>Total</td>
+                        <td style={{ padding: '12px 14px', color: '#111827', textAlign: 'center' }}>{resultado.relatorio.total_geral}</td>
+                        <td style={{ padding: '12px 14px' }}></td>
+                      </tr>
+                    </tfoot>
                   </table>
                 </div>
+              )}
+
+              {/* 2ª SAÍDA: PRÉVIA DO DOCUMENTO ARD */}
+              <div style={{ backgroundColor: '#ffffff', border: '2px solid #006622', borderRadius: '12px', padding: '30px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+                <div dangerouslySetInnerHTML={{ __html: resultado.relatorio.previa_html }} />
+                
+                <div style={{ marginTop: '25px', paddingTop: '15px', borderTop: '1px solid #f3f4f6' }}>
+                  <button 
+                    onClick={handleDownloadRTF} 
+                    style={{ backgroundColor: '#00a843', color: '#ffffff', fontWeight: '600', fontSize: '14px', padding: '10px 20px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+                  >
+                    📄 Baixar Documento (.RTF)
+                  </button>
+                </div>
               </div>
-            )}
+
+              {/* ALERTA EM RED DE REGISTROS SEM CORRESPONDENTE EM EMITIDOS */}
+              {registrosSemCorrespondencia.length > 0 && (
+                <div style={{ backgroundColor: '#dc2626', color: '#ffffff', borderRadius: '12px', padding: '24px 30px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
+                  <h4 style={{ margin: '0 0 12px 0', fontSize: '16px', fontWeight: '700' }}>
+                    ⚠️ Registros com pendência no cruzamento ({registrosSemCorrespondencia.length})
+                  </h4>
+                  <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '14px', lineHeight: '1.6', fontWeight: '500' }}>
+                    {registrosSemCorrespondencia.map((item, idx) => {
+                      if (typeof item === 'object' && item !== null) {
+                        const matricula = item.Matrícula || item.MATRÍCULA || item.matricula || item.MATRICULA || item.Matricula || item.CPF || Object.values(item)[0] || '';
+                        const nome = item.Aluno || item.ALUNO || item.nome || item.NOME || item.Nome || item['Nome do Aluno'] || Object.values(item)[1] || '';
+                        
+                        return (
+                          <li key={idx}>
+                            {matricula ? `${matricula} - ` : ''}{nome} - Diploma emitido em exercício anterior - Favor verificar
+                          </li>
+                        );
+                      }
+                      return (
+                        <li key={idx}>
+                          {String(item)} - Diploma emitido em exercício anterior - Favor verificar
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
+
+              {/* 3ª SAÍDA: PRÉVIA DA PLANILHA FINAL PROCESSADA */}
+              {resultado.relatorio?.dados_tabela?.length > 0 && (
+                <div style={{ backgroundColor: '#ffffff', border: '2px solid #006622', borderRadius: '12px', padding: '25px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+                  
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                    <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#111827', margin: 0 }}>
+                      Prévia da Planilha Final Processada
+                    </h3>
+                    
+                    {/* BOTÃO DE DOWNLOAD DO EXCEL */}
+                    <button 
+                      onClick={handleDownloadExcel} 
+                      style={{ backgroundColor: '#15803d', color: '#ffffff', fontWeight: '600', fontSize: '13px', padding: '8px 16px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+                    >
+                      📊 Baixar Planilha Processada (.XLSX)
+                    </button>
+                  </div>
+
+                  <div style={{ overflowX: 'auto', maxHeight: '350px', border: '1px solid #e5e7eb', borderRadius: '6px' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
+                      <thead>
+                        <tr style={{ backgroundColor: '#f9fafb', position: 'sticky', top: 0, zIndex: 1 }}>
+                          {Object.keys(resultado.relatorio.dados_tabela[0]).map((col) => (
+                            <th key={col} style={{ padding: '10px 14px', borderBottom: '2px solid #e5e7eb', color: '#374151', fontWeight: '700', whiteSpace: 'nowrap' }}>
+                              {col}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {resultado.relatorio.dados_tabela.map((row, index) => (
+                          <tr key={index} style={{ borderBottom: '1px solid #f3f4f6', backgroundColor: index % 2 === 0 ? '#ffffff' : '#f9fafb' }}>
+                            {Object.values(row).map((val, colIdx) => (
+                              <td key={colIdx} style={{ padding: '8px 14px', color: '#4b5563', whiteSpace: 'nowrap' }}>
+                                {val === null || val === "" || val === undefined ? '-' : String(val)}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+            </div>
+
+            {/* RODAPÉ DA MODAL COM BOTÃO DE RETORNO */}
+            <div style={{
+              backgroundColor: '#ffffff',
+              padding: '16px 30px',
+              borderTop: '1px solid #e5e7eb',
+              textAlign: 'right'
+            }}>
+              <button 
+                onClick={handleFecharModal}
+                style={{
+                  backgroundColor: '#4b5563',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '10px 20px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}
+              >
+                Voltar à Tela Inicial
+              </button>
+            </div>
 
           </div>
-        )}
+        </div>
+      )}
 
-      </main>
     </div>
   );
 }
